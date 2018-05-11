@@ -1,0 +1,20 @@
+database:
+  guardian-article-downloads:
+    host: localhost
+    port: 6379
+    db: 0
+
+  download-errors:
+    host: localhost
+    db: 1
+
+  articles:
+    db: 2
+
+csv:
+  articles-file: filepath
+  authors-file: filepath
+  comments-file: filepath
+
+guardian-api:
+  keys: ['test']
