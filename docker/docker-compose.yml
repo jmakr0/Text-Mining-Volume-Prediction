@@ -1,0 +1,52 @@
+version: '3'
+
+services:
+
+  text-mining-friedrich:
+    build: .
+    ports:
+      - "2222:22"
+    links:
+      - redis-testing:redis-host
+    volumes:
+      - ./data/assets:/root/data
+
+  text-mining-nils:
+    build: .
+    ports:
+      - "3333:22"
+    links:
+      - redis-testing:redis-host
+    volumes:
+      - ./data/assets:/root/data
+
+  text-mining-max:
+    build: .
+    ports:
+      - "4444:22"
+    links:
+      - redis-testing:redis-host
+    volumes:
+      - ./data/assets:/root/data
+
+  text-mining-production:
+    build: .
+    ports:
+      - "55555:22"
+    links:
+      - redis-production:redis-host
+    volumes:
+      - ./data/assets:/root/data
+      - ./data/redis/production:/data
+    volumes:
+      - ./data/assets:/root/data
+
+  redis-testing:
+    image: "redis:alpine"
+    volumes:
+      - ./data/redis/testing:/data
+
+  redis-production:
+    image: "redis:alpine"
+    volumes:
+      - ./data/redis/production:/data

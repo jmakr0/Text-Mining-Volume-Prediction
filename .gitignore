@@ -1,0 +1,14 @@
+# Directories
+.DS_Store
+.idea
+venv
+__pycache__
+code/data/*
+code/guardian_scraper/redis_db/*
+code/guardian_scraper/log/*
+
+# Files
+*.pyc
+
+# Except
+!code/*/*/.gitkeep
