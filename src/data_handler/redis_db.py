@@ -13,7 +13,9 @@ class RedisDb:
         self.r = redis.StrictRedis(**database_settings)
 
     def get(self, key):
-        return json.loads(self.r.get(key))
+        value = self.r.get(key)
+        if value:
+            return json.loads(value)
 
     def set(self, key, value):
         self.r.set(key, json.dumps(value))
@@ -23,5 +25,5 @@ class RedisDb:
 
     def __iter__(self):
         for key in self.r.scan_iter():
-            value = self.r.get(key)
+            value = self.get(key)
             yield key, value
