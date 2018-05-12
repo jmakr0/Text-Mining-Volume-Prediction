@@ -1,7 +1,7 @@
 FROM python:3.6-stretch
 
 # Install software
-RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get -y install openssh-server wget curl git htop screen redis-tools sudo
+RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get -y install openssh-server wget curl git htop screen redis-tools tmux sudo
 
 ADD ./setup/run.sh /run.sh
 RUN chmod +x /*.sh

@@ -1,7 +1,6 @@
 from src.data_handler.articles_db import ArticlesDb
 from src.data_handler.guardian_article_downloads_db import GuardianArticleDownloadsDb
 from src.model.guardian_article import GuardianArticle
-from src.utils.labels import Labels
 
 
 class ArticleLabeling:
