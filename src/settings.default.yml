@@ -11,10 +11,10 @@ database:
   articles:
     db: 2
 
-csv:
-  articles-file: filepath
-  authors-file: filepath
-  comments-file: filepath
+guardian-csv:
+  articles: filepath
+  authors: filepath
+  comments: filepath
 
 guardian-api:
   keys: ['test']

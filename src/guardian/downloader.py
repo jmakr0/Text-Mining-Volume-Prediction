@@ -1,18 +1,9 @@
 from threading import Semaphore, Thread
 
-<<<<<<< HEAD
 from src.data_handler.download_errors_db import DownloadErrorsDb
 from src.data_handler.guardian_article_downloads_db import GuardianArticleDownloadsDb
 from src.data_handler.guardian_csv import GuardianCsv
 from src.guardian.api import Api
-=======
-import pandas
-
-from src.utils.settings import Settings
-from src.guardian.api import Api
-from src.data_handler.download_errors_db import DownloadErrorsDb
-from src.data_handler.guardian_article_downloads_db import GuardianArticleDownloadsDb
->>>>>>> ed57db2... added everything including downloader
 
 sem = Semaphore()
 
@@ -92,7 +83,7 @@ class DownloadWorker(Thread):
 def download():
     urls = GuardianCsv().get_url_tuples()
     # max 12 requests per second
-    worker_count = 1
+    worker_count = 5
 
     scraper = Downloader(worker_count, urls)
     scraper.start()
