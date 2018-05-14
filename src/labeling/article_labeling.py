@@ -1,6 +1,6 @@
 from src.data_handler.articles_db import ArticlesDb
 from src.data_handler.guardian_article_downloads_db import GuardianArticleDownloadsDb
-from src.model.guardian_article import GuardianArticle
+from src.model.article import Article
 
 
 class ArticleLabeling:
@@ -11,6 +11,6 @@ class ArticleLabeling:
     def start(self):
         for article_id, article in iter(self.download_db):
             article_id = int(article_id)
-            article = GuardianArticle(article_id, article)
+            article = Article(article_id, article)
 
             self.article_db.set(article_id, article.article_dict)

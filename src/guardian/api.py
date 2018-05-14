@@ -25,7 +25,11 @@ class Api:
 
     @staticmethod
     def extract_fields(response):
-        return response['response']['content']['fields']
+        extrated = response['response']['content']['fields']
+        extrated['sectionId'] = response['response']['content']['sectionId']
+        extrated['sectionName'] = response['response']['content']['sectionName']
+        extrated['webPublicationDate'] = response['response']['content']['webPublicationDate']
+        return extrated;
 
     @staticmethod
     def has_error(response):
