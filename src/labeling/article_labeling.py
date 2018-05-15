@@ -1,16 +1,16 @@
-from src.data_handler.articles_db import ArticlesDb
 from src.data_handler.guardian_api_db import GuardianApiDb
+from src.data_handler.labels_db import LabelsDb
 from src.model.article import Article
 
 
 class ArticleLabeling:
+
     def __init__(self):
         self.download_db = GuardianApiDb()
-        self.article_db = ArticlesDb()
+        self.labels_db = LabelsDb()
 
     def start(self):
-        for article_id, article in iter(self.download_db):
-            article_id = int(article_id)
-            article = Article(article_id, article)
+        for download in iter(self.download_db.get_articles()):
+            article_labeled = Article(download, self.labels_db)
 
-            self.article_db.set(article_id, article.article_dict)
+            self.labels_db.save_labels(article_labeled.get_labels())

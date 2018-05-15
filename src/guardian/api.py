@@ -31,11 +31,14 @@ class Api:
         return requests.get(url).json()
 
     def extract_fields(self, response):
-        fields = response['response']['content']['fields']
+        content = response['response']['content']
+        fields = content['fields']
+
         fields = self._normalize_fields(fields)
-        fields['sectionId'] = response['response']['content']['sectionId']
-        fields['sectionName'] = response['response']['content']['sectionName']
-        fields['webPublicationDate'] = response['response']['content']['webPublicationDate']
+
+        fields[GuardianApi.GENRE_ID.value] = content[GuardianApi.GENRE_ID.value]
+        fields[GuardianApi.GENRE_NAME.value] = content[GuardianApi.GENRE_NAME.value]
+        fields[GuardianApi.PUBLICATION_DATE.value] = content[GuardianApi.PUBLICATION_DATE.value]
         return fields
 
     @staticmethod

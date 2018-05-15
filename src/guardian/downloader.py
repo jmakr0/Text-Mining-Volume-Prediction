@@ -2,10 +2,9 @@ import json
 from threading import Semaphore, Thread
 
 from src.data_handler.articles_db import ArticlesDb
-from src.data_handler.db_fields import GuardianApi, GuardianApiError
+from src.data_handler.db_fields import GuardianApiError
 from src.data_handler.download_errors_db import DownloadErrorsDb
 from src.data_handler.guardian_api_db import GuardianApiDb
-from src.data_handler.guardian_csv import GuardianCsvData
 from src.guardian.api import Api
 
 sem = Semaphore()

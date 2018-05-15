@@ -27,4 +27,4 @@ class GuardianCsvData:
         self._import(self.authors_filename, Authors)
 
     def import_comments(self):
-        self._import(self.authors_filename, Comments)
+        self._import(self.comments_filename, Comments)
