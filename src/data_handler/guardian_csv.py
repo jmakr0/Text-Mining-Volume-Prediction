@@ -9,12 +9,10 @@ class GuardianCsvData:
     def __init__(self):
         settings = Settings()
 
+        self.db = PostgresDb()
         self.articles_filename = settings.get_csv_file('articles')
         self.authors_filename = settings.get_csv_file('authors')
         self.comments_filename = settings.get_csv_file('comments')
-
-        db_settings = settings.get_database_settings()
-        self.db = PostgresDb(db_settings)
 
     def _import(self, filename, db_fields):
         with open(filename, 'r', encoding='utf-8') as f:

@@ -1,11 +1,11 @@
 from src.data_handler.articles_db import ArticlesDb
-from src.data_handler.guardian_article_downloads_db import GuardianArticleDownloadsDb
+from src.data_handler.guardian_api_db import GuardianApiDb
 from src.model.article import Article
 
 
 class ArticleLabeling:
     def __init__(self):
-        self.download_db = GuardianArticleDownloadsDb()
+        self.download_db = GuardianApiDb()
         self.article_db = ArticlesDb()
 
     def start(self):

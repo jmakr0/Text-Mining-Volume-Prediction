@@ -1,7 +1,8 @@
-from src.data_handler.redis_db import RedisDb
+from src.data_handler.db_fields import Articles
+from src.data_handler.postgres_db import PostgresDb
 
 
-class ArticlesDb(RedisDb):
-    def __init__(self):
-        database_name = 'articles'
-        super().__init__(database_name)
+class ArticlesDb(PostgresDb):
+
+    def get_articles(self):
+        return self.get_dicts(Articles)
