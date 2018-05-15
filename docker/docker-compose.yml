@@ -7,7 +7,7 @@ services:
     ports:
       - "2222:22"
     links:
-      - redis-testing:redis-host
+      - db-testing:db-host
     volumes:
       - ./data/assets:/root/data
 
@@ -16,7 +16,7 @@ services:
     ports:
       - "3333:22"
     links:
-      - redis-testing:redis-host
+      - db-testing:db-host
     volumes:
       - ./data/assets:/root/data
 
@@ -25,7 +25,7 @@ services:
     ports:
       - "4444:22"
     links:
-      - redis-testing:redis-host
+      - db-testing:db-host
     volumes:
       - ./data/assets:/root/data
 
@@ -34,19 +34,26 @@ services:
     ports:
       - "55555:22"
     links:
-      - redis-production:redis-host
-    volumes:
-      - ./data/assets:/root/data
-      - ./data/redis/production:/data
+      - db-production:db-host
     volumes:
       - ./data/assets:/root/data
 
-  redis-testing:
-    image: "redis:alpine"
+  db-testing:
+    image: "postgres:alpine"
     volumes:
-      - ./data/redis/testing:/data
+      - ./data/postgres/testing:/var/lib/postgresql/data
+    environment:
+      POSTGRES_USER: test
+      POSTGRES_PASSWORD: test
+    ports:
+      - 8001:5432
 
-  redis-production:
-    image: "redis:alpine"
+  db-production:
+    image: "postgres:alpine"
     volumes:
-      - ./data/redis/production:/data
+      - ./data/postgres/production:/var/lib/postgresql/data
+    environment:
+      POSTGRES_USER: production
+      POSTGRES_PASSWORD: production
+    ports:
+      - 8002:5432

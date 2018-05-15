@@ -8,8 +8,8 @@ class Settings:
         with open(self.FILE, 'r') as yaml_file:
             self.config = yaml.load(yaml_file)
 
-    def get_database_settings(self, database_name):
-        return self.config.get('database')[database_name]
+    def get_database_settings(self):
+        return self.config.get('database')
 
     def get_csv_file(self, name):
         return self.config.get('guardian-csv')[name]

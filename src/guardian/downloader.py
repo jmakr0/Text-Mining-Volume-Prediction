@@ -2,7 +2,7 @@ from threading import Semaphore, Thread
 
 from src.data_handler.download_errors_db import DownloadErrorsDb
 from src.data_handler.guardian_article_downloads_db import GuardianArticleDownloadsDb
-from src.data_handler.guardian_csv import GuardianCsv
+from src.data_handler.guardian_csv import GuardianCsvData
 from src.guardian.api import Api
 
 sem = Semaphore()
@@ -81,7 +81,7 @@ class DownloadWorker(Thread):
 
 
 def download():
-    urls = GuardianCsv().get_url_tuples()
+    urls = GuardianCsvData().get_url_tuples()
     # max 12 requests per second
     worker_count = 5
 

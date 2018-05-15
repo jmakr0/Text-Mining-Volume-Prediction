@@ -1,15 +1,9 @@
 database:
-  guardian-article-downloads:
-    host: localhost
-    port: 6379
-    db: 0
-
-  download-errors:
-    host: localhost
-    db: 1
-
-  articles:
-    db: 2
+  host: db-host
+  port: 8001
+  dbname: postgres
+  user: test
+  password: test
 
 guardian-csv:
   articles: filepath
