@@ -9,7 +9,6 @@ class PostgresDb:
     def __init__(self):
         settings = Settings()
         connection_dict = settings.get_database_settings()
-
         settings = " ".join(['%s=%s' % (key, value) for (key, value) in connection_dict.items()])
         self.conn = psycopg2.connect(settings)
         self.cur = self.conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
@@ -46,7 +45,6 @@ class PostgresDb:
 
             insert_statement = 'insert into {} (%s) values %s'.format(table)
             self.cur.execute(insert_statement, (AsIs(','.join(columns)), tuple(values)))
-
             self.conn.commit()
         except Exception as e:
             print("cant insert dict")
