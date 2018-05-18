@@ -1,3 +1,4 @@
+import json
 from urllib.parse import urlparse
 
 import requests
@@ -27,7 +28,7 @@ class Api:
     def request_article(self, url, api_key):
         url = self.ENDPOINT + urlparse(url).path
         url += '?api-key=' + api_key
-        url += '&show-fields=' + ','.join(self.fields)
+        url += '&show-tags=all&show-fields=' + ','.join(self.fields)
         return requests.get(url).json()
 
     def extract_fields(self, response):
@@ -39,6 +40,7 @@ class Api:
         fields[GuardianApi.GENRE_ID.value] = content[GuardianApi.GENRE_ID.value]
         fields[GuardianApi.GENRE_NAME.value] = content[GuardianApi.GENRE_NAME.value]
         fields[GuardianApi.PUBLICATION_DATE.value] = content[GuardianApi.PUBLICATION_DATE.value]
+        fields[GuardianApi.TAGS.value] = json.dumps(content[GuardianApi.TAGS.value])
         return fields
 
     @staticmethod

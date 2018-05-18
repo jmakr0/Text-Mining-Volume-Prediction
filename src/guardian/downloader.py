@@ -56,26 +56,23 @@ class DownloadWorker(Thread):
             if article:
                 id = article[0]
                 url = article[1]
-                url_saved = self.download_db.get_article(id)
-                url_error = self.error_db.get_article(id)
                 try:
-                    if not url_saved and not url_error:
-                        response = self.guardian_api.request_article(url, api_key)
+                    response = self.guardian_api.request_article(url, api_key)
 
-                        has_error = self.guardian_api.has_error(response)
-                        has_rate_limit = self.guardian_api.rate_limit(response)
+                    has_error = self.guardian_api.has_error(response)
+                    has_rate_limit = self.guardian_api.rate_limit(response)
 
-                        if not has_error and not has_rate_limit:
-                            article_dict = self.guardian_api.extract_fields(response)
-                            article_dict[GuardianApiError.ID.value] = id
-                            self.download_db.save_article(article_dict)
-                        elif has_error and not has_rate_limit:
-                            article_dict = {GuardianApiError.ID.value: id,
-                                            GuardianApiError.REASON.value: json.dumps(response)}
-                            self.error_db.save_article(article_dict)
-                        elif has_rate_limit:
-                            api_key = self.guardian_api.get_api_key()
-                            run = not not api_key
+                    if not has_error and not has_rate_limit:
+                        article_dict = self.guardian_api.extract_fields(response)
+                        article_dict[GuardianApiError.ID.value] = id
+                        self.download_db.save_article(article_dict)
+                    elif has_error and not has_rate_limit:
+                        article_dict = {GuardianApiError.ID.value: id,
+                                        GuardianApiError.REASON.value: json.dumps(response)}
+                        self.error_db.save_article(article_dict)
+                    elif has_rate_limit:
+                        api_key = self.guardian_api.get_api_key()
+                        run = not not api_key
 
                 except Exception as e:
                     print('Could not get: ' + url)
@@ -86,9 +83,9 @@ class DownloadWorker(Thread):
 
 def download():
     article_db = ArticlesDb()
-    articles = article_db.get_articles()
+    articles = article_db.get_download_articles()
     # max 12 requests per second
-    worker_count = 8
+    worker_count = 5
 
     scraper = Downloader(worker_count, articles)
     scraper.start()

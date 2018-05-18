@@ -35,6 +35,7 @@ class GuardianApi(Enum):
     GENRE_ID = 'sectionId'
     GENRE_NAME = 'sectionName'
     PUBLICATION_DATE = 'webPublicationDate'
+    TAGS = 'tags'
 
 
 class GuardianApiError(Enum):
@@ -42,7 +43,7 @@ class GuardianApiError(Enum):
     REASON = 'reason'
 
 
-class Labels(Enum):
+class LabelsView(Enum):
     ID = 'article_id'
     HEADLINE_WORD_COUNT = 'headline_word_count'
     STANDFIRST_WORD_COUNT = 'standfirst_word_count'
