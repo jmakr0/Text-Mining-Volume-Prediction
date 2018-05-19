@@ -1,14 +1,17 @@
 database:
   host: db-host
-  port: 8001
+  port: 5432
   dbname: postgres
-  user: test
-  password: test
+  user: user
+  password: password
 
 guardian-csv:
   articles: filepath
   authors: filepath
   comments: filepath
+
+embeddings:
+  glove: filepath
 
 guardian-api:
   keys: ['test']
