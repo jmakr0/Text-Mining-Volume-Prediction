@@ -85,7 +85,7 @@ def download():
     article_db = ArticlesDb()
     articles = article_db.get_download_articles()
     # max 12 requests per second
-    worker_count = 5
+    worker_count = 8
 
     scraper = Downloader(worker_count, articles)
     scraper.start()
