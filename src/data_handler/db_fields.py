@@ -45,6 +45,7 @@ class GuardianApiError(Enum):
 
 class LabelsView(Enum):
     ID = 'article_id'
+    HEADLINE = 'headline'
     HEADLINE_WORD_COUNT = 'headline_word_count'
     STANDFIRST_WORD_COUNT = 'standfirst_word_count'
     ARTICLE_WORD_COUNT = 'article_word_count'
