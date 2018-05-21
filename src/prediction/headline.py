@@ -98,7 +98,7 @@ class HeadlinePrediction:
         settings = Settings()
         embeddings_path = settings.get_glove_embedding()
 
-        with open(embeddings_path, 'r') as f:
+        with open(embeddings_path, 'r', encoding='utf-8') as f:
             for line in f:
                 line_split = line.strip().split(" ")
                 vec = np.array(line_split[1:], dtype=float)

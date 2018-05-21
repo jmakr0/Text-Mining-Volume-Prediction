@@ -24,9 +24,9 @@ class PredictionData:
             self.minutes.append(article[LabelsView.MINUTE.value])
             self.dayofweeks.append(article[LabelsView.DAY_OF_WEEK.value])
             self.dayofyears.append(article[LabelsView.DAY_OF_YEAR.value])
-            self.is_top_submission.append(article[LabelsView.IN_TOP_TEN_PERCENT.value])
+            self.is_top_submission.append(1 if article[LabelsView.IN_TOP_TEN_PERCENT.value] == 'TRUE' else 0)
 
-    def _transform_to_arrys(self):
+    def _transform_to_arrays(self):
         self.titles = np.array(self.titles)
         self.hours = np.array(self.hours, dtype=int)
         self.minutes = np.array(self.minutes, dtype=int)
@@ -38,7 +38,7 @@ class PredictionData:
 
     def prepare(self):
         self._load_data()
-        self._transform_to_arrys()
+        self._transform_to_arrays()
         self.no_info_rate = 1 - np.mean(self.is_top_submission)
 
     def test_print(self):
