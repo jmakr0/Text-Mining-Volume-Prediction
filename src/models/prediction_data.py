@@ -33,6 +33,8 @@ class PredictionData:
         self.dayofweeks = np.array(self.dayofweeks, dtype=int)
         self.dayofyears = np.array(self.dayofyears, dtype=int)
         self.is_top_submission = np.array(self.is_top_submission, dtype=int)
+
+        self.dayofweeks = self.dayofweeks -1
         # dayofyears is 1-indexed, so must subtract 1.
         self.dayofyears = self.dayofyears -1
 
