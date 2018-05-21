@@ -11,6 +11,9 @@ class Settings:
     def get_database_settings(self):
         return self.config.get('database')
 
+    def get_glove_embedding(self):
+        return self.config.get('embeddings')['glove']
+
     def get_csv_file(self, name):
         return self.config.get('guardian-csv')[name]
 
