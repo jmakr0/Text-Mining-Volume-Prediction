@@ -23,17 +23,25 @@ def main():
     model = model_builder()
 
     csv_logger = CSVLogger('training.csv')
-    model.fit([preprocessor.data['headlines'],
-               preprocessor.data['hours'],
-               preprocessor.data['minutes'],
-               preprocessor.data['day_of_weeks'],
-               preprocessor.data['day_of_years']],
-              [preprocessor.data['is_top_submission'],
-               preprocessor.data['is_top_submission']],
+    model.fit([preprocessor.training_data['headlines'],
+               preprocessor.training_data['hours'],
+               preprocessor.training_data['minutes'],
+               preprocessor.training_data['day_of_weeks'],
+               preprocessor.training_data['day_of_years']],
+              [preprocessor.training_data['is_top_submission'],
+               preprocessor.training_data['is_top_submission']],
               batch_size=64,
               epochs=20,
-              validation_split=0.2,
-              callbacks=[csv_logger])
+              validation_data=([preprocessor.validation_data['headlines'],
+               preprocessor.validation_data['hours'],
+               preprocessor.validation_data['minutes'],
+               preprocessor.validation_data['day_of_weeks'],
+               preprocessor.validation_data['day_of_years']],
+              [preprocessor.validation_data['is_top_submission'],
+               preprocessor.validation_data['is_top_submission']]),
+              callbacks=[csv_logger],
+              class_weight=preprocessor.validation_data['class_weights']
+              )
 
 
 if __name__ == '__main__':
