@@ -1,25 +1,17 @@
 import numpy as np
-
-import random
-
 from keras import Input, Model
+from keras.callbacks import CSVLogger
 from keras.layers import Embedding, GlobalAveragePooling1D, Dense, Reshape, concatenate, BatchNormalization
 from keras.preprocessing import sequence
 
 from src.data_handler.db_fields import LabelsView
+from src.models.glove import Glove
 from src.prediction.model_builder import ModelBuilder
-
+from src.prediction.preprocessor import Preprocessor
 from src.utils.f1_score import f1, precision, recall
 
-AUX_OUTPUT_NAME = 'aux_out'
-MAIN_OUTPUT_NAME = 'main_out'
 
-SEED = 42
-
-# like proposed from DL lecture training: 70%, validation: 15%, test: 15%
-DATA_DISTRIBUTION = {'training': 0.70, 'validation': 0.15, 'test': 0.15}
-
-class RedditModelBuilder(ModelBuilder):
+class HeadlineTimeModelBuilder(ModelBuilder):
 
     def __init__(self):
         super().__init__()
@@ -34,6 +26,8 @@ class RedditModelBuilder(ModelBuilder):
         self.default_parameters['relu_fully_connected_dimensions'] = 256
         self.default_parameters['optimizer'] = 'adam'
         self.default_parameters['loss'] = 'binary_crossentropy'
+        self.default_parameters['headline_output'] = 'headline_output'
+        self.default_parameters['main_output'] = 'main_output'
 
     def __call__(self):
         super().prepare_building()
@@ -45,7 +39,7 @@ class RedditModelBuilder(ModelBuilder):
                                        weights=[glove.embedding_vectors])(headline_input)
         headline_pooling = GlobalAveragePooling1D()(headline_embedding)
 
-        aux_output = Dense(1, activation='sigmoid', name=AUX_OUTPUT_NAME)(headline_pooling)
+        headline_output = Dense(1, activation='sigmoid', name=self.parameters['headline_output'])(headline_pooling)
 
         hour_input = Input(shape=(1,), name='hour_input')
         hour_embedding = Embedding(24, self.parameters['hour_embedding_dimensions'])(hour_input)
@@ -68,15 +62,16 @@ class RedditModelBuilder(ModelBuilder):
                                                minute_reshape,
                                                day_of_week_reshape,
                                                day_of_year_reshape])
-        relu_fully_connected = Dense(self.parameters['relu_fully_connected_dimensions'], activation='relu')(embedding_concatenation)
+        relu_fully_connected = Dense(self.parameters['relu_fully_connected_dimensions'], activation='relu')(
+            embedding_concatenation)
         batch_normalization = BatchNormalization()(relu_fully_connected)
-        main_output = Dense(1, activation='sigmoid', name=MAIN_OUTPUT_NAME)(batch_normalization)
+        main_output = Dense(1, activation='sigmoid', name=self.parameters['main_output'])(batch_normalization)
 
         model = Model(inputs=[headline_input,
                               hour_input,
                               minute_input,
                               day_of_week_input,
-                              day_of_year_input,], outputs=[aux_output, main_output])
+                              day_of_year_input, ], outputs=[headline_output, main_output])
 
         model.compile(loss=self.parameters['loss'],
                       optimizer=self.parameters['optimizer'],
@@ -87,52 +82,23 @@ class RedditModelBuilder(ModelBuilder):
         return model
 
 
-class RedditModelPreprocessor:
-    def __init__(self, glove, db, max_headline_length):
+class HeadlineTimePreprocessor(Preprocessor):
+
+    def __init__(self, model, glove, max_headline_length):
+        super().__init__(model)
         self.glove = glove
-        self.db = db
         self.max_headline_length = max_headline_length
 
-        self.training_data = {}
-        self.validation_data = {}
-        self.test_data = {}
-
-    def load_data(self):
-        labeled_articles = self.db.get_labeled_data()
-
-        # set seed to shuffel everytime the same
-        random.seed(SEED)
-        random.shuffle(labeled_articles)
-
-        training_data, validation_data, test_data = self._split_data(labeled_articles)
-
-        self._write_data_in_dict(self.training_data, training_data)
-        self._write_data_in_dict(self.validation_data, validation_data)
-        self._write_data_in_dict(self.test_data, test_data)
-
-
-    def _split_data(self, data):
-        num_tuples = len(data)
-        num_train_tuples = int(num_tuples * DATA_DISTRIBUTION['training'])
-        num_validation_tuples = int(num_tuples * DATA_DISTRIBUTION['validation'])
-        num_test_tuples = int(num_tuples * DATA_DISTRIBUTION['test'])
-
-        sum = num_train_tuples + num_validation_tuples + num_test_tuples
-
-        training_data = data[:num_train_tuples]
-        validation_data = data[num_train_tuples:num_train_tuples + num_validation_tuples]
-        test_data = data[num_train_tuples + num_validation_tuples:]
-
-        return training_data, validation_data, test_data
-
-
-    def _write_data_in_dict(self, dict, data):
+    def array_to_dict(self, data):
+        result = {}
         headlines = []
         hours = []
         minutes = []
         day_of_weeks = []
         day_of_years = []
         is_top_submission = []
+
+        output_names = [l.name for l in self.model.output_layers]
 
         for article in data:
             headlines.append(self.glove.text_to_sequence(article[LabelsView.HEADLINE.value]))
@@ -144,26 +110,55 @@ class RedditModelPreprocessor:
 
         headlines = sequence.pad_sequences(headlines, maxlen=self.max_headline_length)
 
-        dict['headlines'] = np.array(headlines)
-        dict['hours'] = np.array(hours, dtype=int)
-        dict['minutes'] = np.array(minutes, dtype=int)
-        dict['day_of_weeks'] = np.array(day_of_weeks, dtype=int)
-        dict['day_of_years'] = np.array(day_of_years, dtype=int)
-        dict['is_top_submission'] = np.array(is_top_submission, dtype=int)
-        dict['class_weights'] = self._claculate_class_weigts()
+        result['headlines'] = np.array(headlines)
+        result['hours'] = np.array(hours, dtype=int)
+        result['minutes'] = np.array(minutes, dtype=int)
+        result['day_of_weeks'] = np.array(day_of_weeks, dtype=int)
+        result['day_of_years'] = np.array(day_of_years, dtype=int)
+        result['is_top_submission'] = np.array(is_top_submission, dtype=int)
+        result['class_weights'] = self.calculate_class_weights(result['is_top_submission'], output_names)
+
+        return result
 
 
+def train():
+    dictionary_size = 40000
+    max_headline_length = 20
+    batch_size = 64
+    epochs = 20
 
-    def _claculate_class_weigts(self):
-        top_submission_labels = self.training_data['is_top_submission']
-        classes, counts = np.unique(top_submission_labels, return_counts=True)
-        class_weight_dict = dict(zip(classes, counts))
+    glove = Glove(dictionary_size)
+    glove.load_embedding()
 
-        # because we use two output we need a dict of dicts
-        class_weight_multioutput_dict = dict()
-        class_weight_multioutput_dict[MAIN_OUTPUT_NAME] = class_weight_dict
-        class_weight_multioutput_dict[AUX_OUTPUT_NAME] = class_weight_dict
+    model_builder = HeadlineTimeModelBuilder() \
+        .set_input('glove', glove) \
+        .set_parameter('max_headline_length', max_headline_length)
 
-        self.class_weights_dict = class_weight_multioutput_dict
+    model = model_builder()
 
+    preprocessor = HeadlineTimePreprocessor(model, glove, max_headline_length)
+    preprocessor.load_data()
 
+    csv_logger = CSVLogger('training.csv')
+
+    training_input = [preprocessor.training_data['headlines'],
+                      preprocessor.training_data['hours'],
+                      preprocessor.training_data['minutes'],
+                      preprocessor.training_data['day_of_weeks'],
+                      preprocessor.training_data['day_of_years']]
+
+    training_output = [preprocessor.training_data['is_top_submission'], preprocessor.training_data['is_top_submission']]
+
+    validation_input = [preprocessor.validation_data['headlines'],
+                        preprocessor.validation_data['hours'],
+                        preprocessor.validation_data['minutes'],
+                        preprocessor.validation_data['day_of_weeks'],
+                        preprocessor.validation_data['day_of_years']]
+
+    validation_output = [preprocessor.validation_data['is_top_submission'],
+                         preprocessor.validation_data['is_top_submission']]
+
+    class_weights = preprocessor.training_data['class_weights']
+
+    model.fit(training_input, training_output, batch_size=batch_size, epochs=epochs, callbacks=[csv_logger],
+              validation_data=(validation_input, validation_output), class_weight=class_weights)

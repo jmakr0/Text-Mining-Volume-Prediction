@@ -36,8 +36,7 @@ class Glove:
         word = word.lower()
         if word in self.word_numbers:
             return self.word_numbers[word]
-        else:
-            return 0
+        return 0
 
     def get_word_vector(self, word):
         return self.embedding_vectors[self.get_word_number(word)]
@@ -52,18 +51,21 @@ class Glove:
         return [word for word in seq if word]
 
     def text_to_sequence(self, text):
+        vector = []
+
         if isinstance(text, list):
             seq = text
         else:
             seq = self._text_to_word_sequence(text)
 
-        vector = []
         for word in seq:
             vector.append(self.get_word_number(word))
+
         return vector
 
     def texts_to_sequences(self, texts):
         result = []
+
         for text in texts:
             result.append(self.text_to_sequence(text))
         return result
