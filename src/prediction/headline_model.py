@@ -79,7 +79,7 @@ def train():
     dictionary_size = 40000
     max_headline_length = 20
     batch_size = 64
-    epochs = 50
+    epochs = 20
 
     glove = Glove(dictionary_size)
     glove.load_embedding()
