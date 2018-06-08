@@ -1,4 +1,4 @@
-from src.models.doc2vec import Doc2Vec
+from src.prediction.doc2vec_model import train
 
 if __name__ == '__main__':
-    Doc2Vec()
+    train()

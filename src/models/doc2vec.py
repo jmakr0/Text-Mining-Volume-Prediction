@@ -1,8 +1,8 @@
+import os
 import random
-import time
 
-import gensim as gensim
-import numpy as np
+from gensim.models import doc2vec
+from gensim.utils import simple_preprocess
 
 from src.data_handler.db_fields import LabelsView
 from src.data_handler.labels_db import LabelsDb
@@ -10,44 +10,58 @@ from src.utils.settings import Settings
 
 
 class Doc2Vec:
-    DIMENSIONS = 50
-
     def __init__(self):
         self.db = LabelsDb()
-        self.test_docs = []
-        self.training_docs = []
+        self.model = None
 
-        self.read_corpus()
-        self.train_model()
+    def load_model(self, tag, dimensions):
+        doc2vec_dir = Settings().get_doc2vec_dir()
+        doc2vec_file = '{}/{}_{}.model'.format(doc2vec_dir, tag, dimensions)
 
-    def read_corpus(self):
+        if os.path.isfile(doc2vec_file):
+            print('loading doc2vec model ...')
+            self.model = doc2vec.Doc2Vec.load(doc2vec_file)
+        else:
+            self.train_model(tag, dimensions)
+            print('saving model ...')
+            os.makedirs(doc2vec_dir)
+            self.model.save(doc2vec_file)
+
+    def train_model(self, tag, dimensions):
+        """
+        :param tag: Defines on which dataset to train. Choose either 'headline' or 'text'.
+        :param dimensions:
+        :return:
+        """
+        print('training model ...')
+        if tag == 'headline':
+            column = LabelsView.HEADLINE.value
+        elif tag == 'text':
+            # TODO
+            pass
+        else:
+            raise ValueError('tag is not accepted')
+
+        docs = self._load_docs(column)
+        self.model = doc2vec.Doc2Vec(vector_size=dimensions, min_count=5, epochs=200, workers=4)
+        self.model.build_vocab(docs)
+        self.model.train(docs, total_examples=self.model.corpus_count, epochs=self.model.epochs)
+
+    def _load_docs(self, column):
         data = self.db.get_labeled_data()
+        docs = []
+
+        for i, row in enumerate(data):
+            value = row[column]
+            docs.append(doc2vec.TaggedDocument(simple_preprocess(value), [i]))
 
         random.seed(187)
-        random.shuffle(data)
+        random.shuffle(docs)
 
-        test_data = data[:int(len(data) * 0.1)]
-        training_data = data[int(len(data) * 0.1):]
+        return docs
 
-        for row in test_data:
-            value = row[LabelsView.HEADLINE.value]
-            self.test_docs.append(gensim.utils.simple_preprocess(value))
+    def get_dimensions(self):
+        return self.model.vector_size
 
-        for i, row in enumerate(training_data):
-            value = row[LabelsView.HEADLINE.value]
-            self.training_docs.append(gensim.models.doc2vec.TaggedDocument(gensim.utils.simple_preprocess(value), [i]))
-
-        # print(self.test_docs[:100])
-
-    def train_model(self):
-        model = gensim.models.doc2vec.Doc2Vec(vector_size=100, min_count=5, epochs=55, workers=4)
-        model.build_vocab(self.training_docs)
-        model.train(self.training_docs, total_examples=model.corpus_count, epochs=model.epochs)
-
-        vec_1 = model.infer_vector(['only', 'you', 'can', 'prevent', 'forest', 'fires'])
-        vec_2 = model.infer_vector(['whiplash', 'testament', 'of', 'youth', 'wild', 'this', 'week', 'new', 'films'])
-        vec_3 = model.infer_vector(['elisabeth', 'leonskaja', 'and', 'friends', 'birthday', 'tribute', 'to', 'virtuoso', 'pianist'])
-        vec_4 = model.infer_vector(['elisabeth', 'leonskaja', 'or', 'friends', 'birthday', 'tribute', 'to', 'virtuoso', 'pianist'])
-
-        print(np.linalg.norm(vec_1 - vec_2))
-        print(np.linalg.norm(vec_3 - vec_4))
+    def get_vector(self, doc):
+        return self.model.infer_vector(simple_preprocess(doc))

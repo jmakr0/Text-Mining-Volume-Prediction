@@ -13,5 +13,8 @@ guardian-csv:
 embeddings:
   glove: filepath
 
+models:
+  doc2vec_dir: filepath
+
 guardian-api:
   keys: ['test']

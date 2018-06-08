@@ -1,16 +1,8 @@
-import numpy as np
-
 import random
 
-from keras import Input, Model
-from keras.layers import Embedding, GlobalAveragePooling1D, Dense, Reshape, concatenate, BatchNormalization
-from keras.preprocessing import sequence
+import numpy as np
 
-from src.data_handler.db_fields import LabelsView
 from src.data_handler.labels_db import LabelsDb
-from src.prediction.model_builder import ModelBuilder
-
-from src.utils.f1_score import f1, precision, recall
 
 AUX_OUTPUT_NAME = 'aux_out'
 MAIN_OUTPUT_NAME = 'main_out'

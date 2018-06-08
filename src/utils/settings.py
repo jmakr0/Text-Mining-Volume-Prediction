@@ -14,6 +14,9 @@ class Settings:
     def get_glove_embedding(self):
         return self.config.get('embeddings')['glove']
 
+    def get_doc2vec_dir(self):
+        return self.config.get('models')['doc2vec_dir']
+
     def get_csv_file(self, name):
         return self.config.get('guardian-csv')[name]
 
