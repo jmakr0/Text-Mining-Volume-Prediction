@@ -1,22 +1,29 @@
+from os.path import basename
+
 import matplotlib.patches as mpatches
 import matplotlib.pyplot as plt
 import matplotlib.ticker as plticker
 import pandas as pd
+from keras.callbacks import Callback
 
 
 class Csv_plotter():
-    x_axis_label = "Epoch"
+    X_AXIS_LABEL = "Epoch"
 
     def __init__(self, csv_filepath):
-        self.csv_data_frame = pd.read_csv(csv_filepath)
+        self.csv_filepath = csv_filepath
+        self.default_plot_filename = self._create_default_plot_filename()
 
-    def plot_csv_data(self, config, filename="plot", scale=(8, 4)):
+
+    def plot_csv_data(self, config, filename="", scale=(8, 4)):
         """
         plots subset of data from csv file
         :param config: config should be a list of entries with the following structure: (<attribute_to_plot>,<color_for_plot>,<attribute_display_name>)
         :param filename: the filename for the plot
         :param scale: the scale of the plot as a tupel (<width_scale>,<height_scale>)
         """
+        self.csv_data_frame = pd.read_csv(self.csv_filepath)
+
         handles = []
 
         # get epochs as data for x axis
@@ -46,7 +53,31 @@ class Csv_plotter():
 
         plt.legend(handles=handles)
 
+        if filename == "":
+            filename = self.default_plot_filename
+
         plt.savefig(filename)
 
     def _get_column_as_numpy_array(self, column_name):
         return self.csv_data_frame[column_name].values
+
+    def _create_default_plot_filename(self):
+        csv_filename = basename(self.csv_filepath)
+        # remove the file ending
+        without_ending = csv_filename.split('.')[0]
+        return str(without_ending) + '_plot'
+
+
+class CSV_plotter_callback(Callback):
+
+    def __init__(self, csv_filepath, config):
+        super(CSV_plotter_callback, self).__init__()
+        self.csv_plotter = Csv_plotter(csv_filepath)
+        self.config = config
+
+
+    def on_train_end(self, logs=None):
+        self.csv_plotter.plot_csv_data(self.config)
+
+
+

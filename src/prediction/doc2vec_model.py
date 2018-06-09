@@ -8,6 +8,7 @@ from src.models.doc2vec import Doc2Vec
 from src.prediction.model_builder import ModelBuilder
 from src.prediction.preprocessor import Preprocessor
 import src.utils.f1_score
+from src.utils.csv_plot import CSV_plotter_callback
 
 
 class Doc2VecModelBuilder(ModelBuilder):
@@ -112,6 +113,8 @@ def train():
     batch_size = 64
     epochs = 20
 
+    csv_filename = 'training_doc2vec_model.csv'
+
     headline_doc2vec = Doc2Vec()
     headline_doc2vec.load_model('headline', 100)
 
@@ -121,7 +124,10 @@ def train():
     preprocessor = Doc2VecPreprocessor(model, headline_doc2vec)
     preprocessor.load_data()
 
-    csv_logger = CSVLogger('training.csv')
+    csv_logger = CSVLogger(csv_filename)
+
+    plot_config = [('f1', (0.1, 0.0, 0.9), 'f1-score'), ('val_f1', 'g', 'validation f1-score')]
+    plot_callback = CSV_plotter_callback(csv_filename, plot_config)
 
     training_input = [preprocessor.training_data['headlines'],
                       preprocessor.training_data['hours'],
@@ -141,5 +147,5 @@ def train():
 
     class_weights = preprocessor.training_data['class_weights']
 
-    model.fit(training_input, training_output, batch_size=batch_size, epochs=epochs, callbacks=[csv_logger],
+    model.fit(training_input, training_output, batch_size=batch_size, epochs=epochs, callbacks=[csv_logger, plot_callback],
               validation_data=(validation_input, validation_output), class_weight=class_weights)

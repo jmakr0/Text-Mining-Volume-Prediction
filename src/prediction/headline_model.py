@@ -8,6 +8,7 @@ from src.data_handler.db_fields import LabelsView
 from src.models.glove import Glove
 from src.prediction.model_builder import ModelBuilder
 from src.prediction.preprocessor import Preprocessor
+from src.utils.csv_plot import CSV_plotter_callback
 from src.utils.f1_score import f1, precision, recall
 
 
@@ -81,6 +82,8 @@ def train():
     batch_size = 64
     epochs = 20
 
+    csv_filename = 'training_headline_model.csv'
+
     glove = Glove(dictionary_size)
     glove.load_embedding()
 
@@ -93,7 +96,10 @@ def train():
     preprocessor = HeadlinePreprocessor(model, glove, max_headline_length)
     preprocessor.load_data()
 
-    csv_logger = CSVLogger('training_headline_model.csv')
+    csv_logger = CSVLogger(csv_filename)
+
+    plot_config = [('f1', (0.1, 0.0, 0.9), 'f1-score'), ('val_f1', 'g', 'validation f1-score')]
+    plot_callback = CSV_plotter_callback(csv_filename, plot_config)
 
     training_input = [preprocessor.training_data['headlines']]
     training_output = [preprocessor.training_data['is_top_submission']]
@@ -103,5 +109,5 @@ def train():
 
     class_weights = preprocessor.training_data['class_weights']
 
-    model.fit(training_input, training_output, batch_size=batch_size, epochs=epochs, callbacks=[csv_logger],
+    model.fit(training_input, training_output, batch_size=batch_size, epochs=epochs, callbacks=[csv_logger, plot_callback],
               validation_data=(validation_input, validation_output), class_weight=class_weights)
