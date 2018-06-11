@@ -8,11 +8,14 @@ from src.data_handler.db_fields import LabelsView
 from src.models.glove import Glove
 from src.prediction.model_builder import ModelBuilder
 from src.prediction.preprocessor import Preprocessor
-from src.utils.csv_plot import CSV_plotter_callback
+from src.utils.csv_plot import CSVPlotterCallback
 from src.utils.f1_score import f1, precision, recall
+from src.utils.settings import Settings
 
 
 class HeadlineTimeModelBuilder(ModelBuilder):
+
+    MODEL_IDENTIFIER = 'headline_time_model'
 
     def __init__(self):
         super().__init__()
@@ -72,7 +75,7 @@ class HeadlineTimeModelBuilder(ModelBuilder):
                               hour_input,
                               minute_input,
                               day_of_week_input,
-                              day_of_year_input, ], outputs=[headline_output, main_output])
+                              day_of_year_input, ], outputs=[headline_output, main_output], name=self.MODEL_IDENTIFIER)
 
         model.compile(loss=self.parameters['loss'],
                       optimizer=self.parameters['optimizer'],
@@ -123,12 +126,12 @@ class HeadlineTimePreprocessor(Preprocessor):
 
 
 def train():
+    settings = Settings()
+
     dictionary_size = 40000
     max_headline_length = 20
     batch_size = 64
     epochs = 20
-
-    csv_filename = 'training_headline_time_model.csv'
 
     glove = Glove(dictionary_size)
     glove.load_embedding()
@@ -142,10 +145,12 @@ def train():
     preprocessor = HeadlineTimePreprocessor(model, glove, max_headline_length)
     preprocessor.load_data()
 
+    csv_filename = settings.get_csv_filename(model.name)
+
     csv_logger = CSVLogger(csv_filename)
 
     plot_config = [('main_output_f1', (0.1, 0.0, 0.9), 'f1-score'), ('val_main_output_f1', 'g', 'validation f1-score')]
-    plot_callback = CSV_plotter_callback(csv_filename, plot_config)
+    plot_callback = CSVPlotterCallback(csv_filename, plot_config)
 
     training_input = [preprocessor.training_data['headlines'],
                       preprocessor.training_data['hours'],

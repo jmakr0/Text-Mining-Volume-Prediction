@@ -8,10 +8,13 @@ from src.models.doc2vec import Doc2Vec
 from src.prediction.model_builder import ModelBuilder
 from src.prediction.preprocessor import Preprocessor
 import src.utils.f1_score
-from src.utils.csv_plot import CSV_plotter_callback
+from src.utils.csv_plot import CSVPlotterCallback
+from src.utils.settings import Settings
 
 
 class Doc2VecModelBuilder(ModelBuilder):
+
+    MODEL_IDENTIFIER = 'doc2vec_model'
 
     def __init__(self):
         super().__init__()
@@ -64,7 +67,7 @@ class Doc2VecModelBuilder(ModelBuilder):
                               hour_input,
                               minute_input,
                               day_of_week_input,
-                              day_of_year_input, ], outputs=[main_output])
+                              day_of_year_input, ], outputs=[main_output], name=self.MODEL_IDENTIFIER)
 
         model.compile(loss=self.parameters['loss'],
                       optimizer=self.parameters['optimizer'],
@@ -110,10 +113,10 @@ class Doc2VecPreprocessor(Preprocessor):
 
 
 def train():
+    settings = Settings()
+
     batch_size = 64
     epochs = 20
-
-    csv_filename = 'training_doc2vec_model.csv'
 
     headline_doc2vec = Doc2Vec()
     headline_doc2vec.load_model('headline', 100)
@@ -124,10 +127,12 @@ def train():
     preprocessor = Doc2VecPreprocessor(model, headline_doc2vec)
     preprocessor.load_data()
 
+    csv_filename = settings.get_csv_filename(model.name)
+
     csv_logger = CSVLogger(csv_filename)
 
     plot_config = [('f1', (0.1, 0.0, 0.9), 'f1-score'), ('val_f1', 'g', 'validation f1-score')]
-    plot_callback = CSV_plotter_callback(csv_filename, plot_config)
+    plot_callback = CSVPlotterCallback(csv_filename, plot_config)
 
     training_input = [preprocessor.training_data['headlines'],
                       preprocessor.training_data['hours'],

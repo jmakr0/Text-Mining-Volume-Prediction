@@ -1,3 +1,4 @@
+import os
 from os.path import basename
 
 import matplotlib.patches as mpatches
@@ -7,7 +8,7 @@ import pandas as pd
 from keras.callbacks import Callback
 
 
-class Csv_plotter():
+class CsvPlotter():
     X_AXIS_LABEL = "Epoch"
 
     def __init__(self, csv_filepath):
@@ -53,13 +54,21 @@ class Csv_plotter():
 
         plt.legend(handles=handles)
 
-        if filename == "":
-            filename = self.default_plot_filename
+        filepath = self._get_filepath_to_save(filename)
 
-        plt.savefig(filename)
+        plt.savefig(filepath)
 
     def _get_column_as_numpy_array(self, column_name):
         return self.csv_data_frame[column_name].values
+
+    def _get_filepath_to_save(self, filename):
+        if filename == "":
+            filename = self.default_plot_filename
+
+        filepath = os.path.dirname(os.path.abspath(self.csv_filepath))
+
+        return filepath + "/" + filename
+
 
     def _create_default_plot_filename(self):
         csv_filename = basename(self.csv_filepath)
@@ -68,11 +77,11 @@ class Csv_plotter():
         return str(without_ending) + '_plot'
 
 
-class CSV_plotter_callback(Callback):
+class CSVPlotterCallback(Callback):
 
     def __init__(self, csv_filepath, config):
-        super(CSV_plotter_callback, self).__init__()
-        self.csv_plotter = Csv_plotter(csv_filepath)
+        super(CSVPlotterCallback, self).__init__()
+        self.csv_plotter = CsvPlotter(csv_filepath)
         self.config = config
 
 

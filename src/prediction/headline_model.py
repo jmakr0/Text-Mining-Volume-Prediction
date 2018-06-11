@@ -1,18 +1,21 @@
 import numpy as np
 from keras import Input, Model
-from keras.callbacks import CSVLogger
-from keras.layers import Embedding, GlobalAveragePooling1D, Dense, Reshape, concatenate, BatchNormalization
+from keras.layers import Embedding, GlobalAveragePooling1D, Dense, BatchNormalization
 from keras.preprocessing import sequence
 
 from src.data_handler.db_fields import LabelsView
 from src.models.glove import Glove
 from src.prediction.model_builder import ModelBuilder
 from src.prediction.preprocessor import Preprocessor
-from src.utils.csv_plot import CSV_plotter_callback
+from src.utils.csv_plot import CSVPlotterCallback
+from src.utils.custom_csv_logger import CustomCsvLogger
 from src.utils.f1_score import f1, precision, recall
+from src.utils.settings import Settings
 
 
 class HeadlineModelBuilder(ModelBuilder):
+
+    MODEL_IDENTIFIER = 'headline_model'
 
     def __init__(self):
         super().__init__()
@@ -39,7 +42,7 @@ class HeadlineModelBuilder(ModelBuilder):
         batch_normalization = BatchNormalization()(relu_fully_connected)
         main_output = Dense(1, activation='sigmoid', name=self.parameters['main_output'])(batch_normalization)
 
-        model = Model(inputs=[headline_input], outputs=[main_output])
+        model = Model(inputs=[headline_input], outputs=[main_output], name=self.MODEL_IDENTIFIER)
 
         model.compile(loss=self.parameters['loss'],
                       optimizer=self.parameters['optimizer'],
@@ -77,12 +80,12 @@ class HeadlinePreprocessor(Preprocessor):
 
 
 def train():
+    settings = Settings()
+
     dictionary_size = 40000
     max_headline_length = 20
     batch_size = 64
     epochs = 20
-
-    csv_filename = 'training_headline_model.csv'
 
     glove = Glove(dictionary_size)
     glove.load_embedding()
@@ -96,10 +99,12 @@ def train():
     preprocessor = HeadlinePreprocessor(model, glove, max_headline_length)
     preprocessor.load_data()
 
-    csv_logger = CSVLogger(csv_filename)
+    csv_filename = settings.get_csv_filename(model.name)
+
+    csv_logger = CustomCsvLogger(csv_filename)
 
     plot_config = [('f1', (0.1, 0.0, 0.9), 'f1-score'), ('val_f1', 'g', 'validation f1-score')]
-    plot_callback = CSV_plotter_callback(csv_filename, plot_config)
+    plot_callback = CSVPlotterCallback(csv_filename, plot_config)
 
     training_input = [preprocessor.training_data['headlines']]
     training_output = [preprocessor.training_data['is_top_submission']]
