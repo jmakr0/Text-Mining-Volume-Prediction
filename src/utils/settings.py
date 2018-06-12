@@ -22,3 +22,6 @@ class Settings:
 
     def get_guardian_api_keys(self):
         return self.config.get('guardian-api')['keys']
+
+    def get_training_root_dir(self):
+        return self.config.get('training-results')['root-dir']

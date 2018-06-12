@@ -37,6 +37,29 @@ class ModelBuilder:
         self.check_required()
         self.set_defaults()
 
+    def get_model_description(self):
+        description = ""
+
+        description += "required_inputs:\n"
+        description += str(self.required_inputs) + "\n"
+
+        description += "required_parameters:\n"
+        description += str(self.required_parameters) + "\n"
+
+        description += "default_inputs:\n"
+        description += str(self.default_parameters) + "\n"
+
+        description += "default_parameters:\n"
+        description += str(self.default_parameters) + "\n"
+
+        description += "inputs:\n"
+        description += str(self.inputs) + "\n"
+
+        description += "parameters:\n"
+        description += str(self.parameters) + "\n"
+
+        return description
+
     def __call__(self):
         raise NotImplementedError
 
