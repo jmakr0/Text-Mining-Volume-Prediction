@@ -8,8 +8,11 @@ from src.models.doc2vec import Doc2Vec
 from src.prediction.model_builder import ModelBuilder
 from src.prediction.preprocessor import Preprocessor
 import src.utils.f1_score
+from src.utils.config_logger import ConfigLoggerCallback
 from src.utils.csv_plot import CSVPlotterCallback
+from src.utils.custom_csv_logger import CustomCsvLogger
 from src.utils.settings import Settings
+from src.utils.utils import get_timestamp
 
 
 class Doc2VecModelBuilder(ModelBuilder):
@@ -115,11 +118,14 @@ class Doc2VecPreprocessor(Preprocessor):
 def train():
     settings = Settings()
 
-    batch_size = 64
-    epochs = 20
+    hyper_parameters = {}
+
+    hyper_parameters['doc2vec_dimensions'] = 100
+    hyper_parameters['batch_size'] = 64
+    hyper_parameters['epochs'] = 20
 
     headline_doc2vec = Doc2Vec()
-    headline_doc2vec.load_model('headline', 100)
+    headline_doc2vec.load_model('headline', hyper_parameters['doc2vec_dimensions'])
 
     model_builder = Doc2VecModelBuilder().set_input('headline_doc2vec', headline_doc2vec)
     model = model_builder()
@@ -127,12 +133,14 @@ def train():
     preprocessor = Doc2VecPreprocessor(model, headline_doc2vec)
     preprocessor.load_data()
 
-    csv_filename = settings.get_csv_filename(model.name)
+    timestamp = get_timestamp()
 
-    csv_logger = CSVLogger(csv_filename)
+    csv_logger = CustomCsvLogger(model.name, timestamp)
 
     plot_config = [('f1', (0.1, 0.0, 0.9), 'f1-score'), ('val_f1', 'g', 'validation f1-score')]
-    plot_callback = CSVPlotterCallback(csv_filename, plot_config)
+    plot_callback = CSVPlotterCallback(csv_logger.csv_file, plot_config)
+
+    config_log_callback = ConfigLoggerCallback(model.name, timestamp, model_builder.get_model_description(), hyper_parameters)
 
     training_input = [preprocessor.training_data['headlines'],
                       preprocessor.training_data['hours'],
@@ -152,5 +160,5 @@ def train():
 
     class_weights = preprocessor.training_data['class_weights']
 
-    model.fit(training_input, training_output, batch_size=batch_size, epochs=epochs, callbacks=[csv_logger, plot_callback],
+    model.fit(training_input, training_output, batch_size= hyper_parameters['batch_size'], epochs=hyper_parameters['epochs'], callbacks=[csv_logger, plot_callback, config_log_callback],
               validation_data=(validation_input, validation_output), class_weight=class_weights)

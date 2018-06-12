@@ -20,6 +20,4 @@ guardian-api:
   keys: ['test']
 
 training-results:
-  doc2vec_model: filepath
-  headline_model: filepath
-  headline_model: filepath
+  root-dir: dirpath
