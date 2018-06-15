@@ -7,12 +7,11 @@ from src.data_handler.db_fields import LabelsView
 from src.models.glove import Glove
 from src.prediction.model_builder import ModelBuilder
 from src.prediction.preprocessor import Preprocessor
-from src.utils.config_logger import ConfigLoggerCallback
-from src.utils.csv_plot import CSVPlotterCallback
-from src.utils.custom_csv_logger import CustomCsvLogger
 from src.utils.f1_score import f1, precision, recall
-from src.utils.settings import Settings
-from src.utils.utils import get_timestamp
+from src.utils.logging.callback_builder import CallbackBuilder
+from src.utils.logging.callbacks.config_logger import ConfigLogger
+from src.utils.logging.callbacks.csv_logger import CsvLogger
+from src.utils.logging.callbacks.csv_plotter import CsvPlotter
 
 
 class HeadlineModelBuilder(ModelBuilder):
@@ -82,14 +81,12 @@ class HeadlinePreprocessor(Preprocessor):
 
 
 def train():
-    settings = Settings()
-
     hyper_parameters = {}
 
     hyper_parameters['dictionary_size'] = 40000
     hyper_parameters['max_headline_length'] = 20
     hyper_parameters['batch_size'] = 64
-    hyper_parameters['epochs'] = 2
+    hyper_parameters['epochs'] = 20
 
     glove = Glove(hyper_parameters['dictionary_size'])
     glove.load_embedding()
@@ -103,14 +100,7 @@ def train():
     preprocessor = HeadlinePreprocessor(model, glove, hyper_parameters['max_headline_length'])
     preprocessor.load_data()
 
-    timestamp = get_timestamp()
-
-    csv_logger = CustomCsvLogger(model.name, timestamp)
-
-    plot_config = [('f1', (0.1, 0.0, 0.9), 'f1-score'), ('val_f1', 'g', 'validation f1-score')]
-    plot_callback = CSVPlotterCallback(csv_logger.csv_file, plot_config)
-
-    config_log_callback = ConfigLoggerCallback(model.name, timestamp, model_builder.get_model_description(), hyper_parameters)
+    callbacks = CallbackBuilder(model, hyper_parameters, [CsvLogger, CsvPlotter, ConfigLogger])()
 
     training_input = [preprocessor.training_data['headlines']]
     training_output = [preprocessor.training_data['is_top_submission']]
@@ -120,5 +110,5 @@ def train():
 
     class_weights = preprocessor.training_data['class_weights']
 
-    model.fit(training_input, training_output, batch_size=hyper_parameters['batch_size'], epochs=hyper_parameters['epochs'], callbacks=[csv_logger, plot_callback, config_log_callback],
+    model.fit(training_input, training_output, batch_size=hyper_parameters['batch_size'], epochs=hyper_parameters['epochs'], callbacks=callbacks,
               validation_data=(validation_input, validation_output), class_weight=class_weights)

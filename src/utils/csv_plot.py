@@ -5,16 +5,16 @@ import matplotlib.patches as mpatches
 import matplotlib.pyplot as plt
 import matplotlib.ticker as plticker
 import pandas as pd
-from keras.callbacks import Callback
 
 
-class CsvPlotter():
+class CsvPlotter:
     X_AXIS_LABEL = "Epoch"
 
     def __init__(self, csv_filepath):
         self.csv_filepath = csv_filepath
-        self.default_plot_filename = self._create_default_plot_filename()
-
+        dir = os.path.dirname(os.path.abspath(csv_filepath))
+        plot_name = '.'.join(basename(self.csv_filepath).split('.')[:-1]) + '_plot'
+        self.plot_filepath = '{}/{}'.format(dir, plot_name)
 
     def plot_csv_data(self, config, filename="", scale=(8, 4)):
         """
@@ -28,7 +28,7 @@ class CsvPlotter():
         handles = []
 
         # get epochs as data for x axis
-        epochs = self._get_column_as_numpy_array("epoch")
+        epochs = self.csv_data_frame['epoch'].values
 
         fig = plt.figure(figsize=scale)
         ax = fig.add_subplot(111)
@@ -43,7 +43,7 @@ class CsvPlotter():
         ax.xaxis.set_major_locator(loc)
 
         for attribute, color, display_name in config:
-            data_points = self._get_column_as_numpy_array(attribute)
+            data_points = self.csv_data_frame[attribute].values
             ax.plot(epochs, data_points, color=color, linestyle='-', marker='o')
 
             if display_name:
@@ -54,39 +54,4 @@ class CsvPlotter():
 
         plt.legend(handles=handles)
 
-        filepath = self._get_filepath_to_save(filename)
-
-        plt.savefig(filepath)
-
-    def _get_column_as_numpy_array(self, column_name):
-        return self.csv_data_frame[column_name].values
-
-    def _get_filepath_to_save(self, filename):
-        if filename == "":
-            filename = self.default_plot_filename
-
-        filepath = os.path.dirname(os.path.abspath(self.csv_filepath))
-
-        return filepath + "/" + filename
-
-
-    def _create_default_plot_filename(self):
-        csv_filename = basename(self.csv_filepath)
-        # remove the file ending
-        without_ending = csv_filename.split('.')[0]
-        return str(without_ending) + '_plot'
-
-
-class CSVPlotterCallback(Callback):
-
-    def __init__(self, csv_filepath, config):
-        super(CSVPlotterCallback, self).__init__()
-        self.csv_plotter = CsvPlotter(csv_filepath)
-        self.config = config
-
-
-    def on_train_end(self, logs=None):
-        self.csv_plotter.plot_csv_data(self.config)
-
-
-
+        plt.savefig(self.plot_filepath)

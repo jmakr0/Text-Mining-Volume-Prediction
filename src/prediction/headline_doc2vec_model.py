@@ -1,6 +1,5 @@
 import numpy as np
 from keras import Input, Model
-from keras.callbacks import CSVLogger
 from keras.layers import Dense, BatchNormalization
 
 from src.data_handler.db_fields import LabelsView
@@ -8,10 +7,13 @@ from src.models.doc2vec import Doc2Vec
 from src.prediction.model_builder import ModelBuilder
 from src.prediction.preprocessor import Preprocessor
 from src.utils.f1_score import f1, precision, recall
+from src.utils.logging.callback_builder import CallbackBuilder
+from src.utils.logging.callbacks.config_logger import ConfigLogger
+from src.utils.logging.callbacks.csv_logger import CsvLogger
+from src.utils.logging.callbacks.csv_plotter import CsvPlotter
 
 
 class HeadlineDoc2VecModelBuilder(ModelBuilder):
-
     MODEL_IDENTIFIER = 'headline_doc2vec_model'
 
     def __init__(self):
@@ -70,20 +72,22 @@ class HeadlineDoc2VecPreprocessor(Preprocessor):
 
 
 def train():
-    batch_size = 64
-    epochs = 50
+    hyper_parameters = {}
+
+    hyper_parameters['batch_size'] = 64
+    hyper_parameters['epochs'] = 50
 
     headline_doc2vec = Doc2Vec()
     headline_doc2vec.load_model('headline', 100)
 
-    model_builder = HeadlineDoc2VecModelBuilder()\
+    model_builder = HeadlineDoc2VecModelBuilder() \
         .set_input('headline_doc2vec', headline_doc2vec)
     model = model_builder()
 
     preprocessor = HeadlineDoc2VecPreprocessor(model, headline_doc2vec)
     preprocessor.load_data()
 
-    csv_logger = CSVLogger('training.csv')
+    callbacks = CallbackBuilder(model, hyper_parameters, [CsvLogger, CsvPlotter, ConfigLogger])()
 
     training_input = [preprocessor.training_data['headlines']]
     training_output = [preprocessor.training_data['is_top_submission']]
@@ -93,5 +97,6 @@ def train():
 
     class_weights = preprocessor.training_data['class_weights']
 
-    model.fit(training_input, training_output, batch_size=batch_size, epochs=epochs, callbacks=[csv_logger],
+    model.fit(training_input, training_output, batch_size=hyper_parameters['batch_size'],
+              epochs=hyper_parameters['epochs'], callbacks=callbacks,
               validation_data=(validation_input, validation_output), class_weight=class_weights)
