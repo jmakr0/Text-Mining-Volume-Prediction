@@ -49,6 +49,7 @@ class LabelsView(Enum):
     HEADLINE_WORD_COUNT = 'headline_word_count'
     ARTICLE = 'article'
     ARTICLE_WORD_COUNT = 'article_word_count'
+    CATEGORY_ID = 'category_id'
     COMMENT_PERFORMANCE_WEEKLY = 'comment_performance_weekly'
     IN_TOP_TEN_PERCENT = 'in_top_ten_percent'
     COMMENT_COUNT = 'comment_count'
