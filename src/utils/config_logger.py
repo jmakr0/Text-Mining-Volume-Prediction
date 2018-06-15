@@ -7,19 +7,21 @@ from src.utils.settings import Settings
 
 class ConfigLogger():
 
-    def __init__(self, modelname, timestamp):
+    def __init__(self, model, timestamp):
         settings = Settings()
 
-        filepath = settings.get_training_root_dir() + modelname + "_" + timestamp
+        self.filepath = settings.get_training_root_dir() + model.name + "_" + timestamp
 
-        filename = filepath + "/config.txt"
+        filename = self.filepath + "/config.txt"
 
         self.log_filename = filename
 
-    def log_training_config(self, model_name, model_description, hyperparameters):
-        log_text = ""
+        model.summary(print_fn=self._handle_summary_print)
+        self.model = model
 
-        log_text += "MODEL NAME:\n" + model_name + "\n"
+    def log_training_config(self, model_description, hyperparameters):
+        log_text = ""
+        log_text += "\n" + "MODEL NAME:\n" + self.model.name + "\n"
         log_text += "\n" + "MODEL DESCRIPTION:\n" + model_description + "\n"
         log_text += "HYPERPARAMETERS:\n" + str(hyperparameters)
 
@@ -27,15 +29,20 @@ class ConfigLogger():
         with open(self.log_filename, "w") as f:
             f.write(log_text)
 
+    def _handle_summary_print(self, s):
+        os.makedirs(os.path.dirname(self.log_filename), exist_ok=True)
+        with open(self.filepath + '/model_summary.txt', 'a') as f:
+            print(s, file=f)
+
+
 class ConfigLoggerCallback(Callback):
 
-    def __init__(self, modelname, timestamp, model_description, hyperparameters):
+    def __init__(self, model, timestamp, model_description, hyperparameters):
         super(ConfigLoggerCallback, self).__init__()
-        self.config_logger = ConfigLogger(modelname, timestamp)
-        self.model_name = modelname
+        self.config_logger = ConfigLogger(model, timestamp)
         self.model_description = model_description
         self.hyperparameters = hyperparameters
 
 
     def on_train_end(self, logs=None):
-        self.config_logger.log_training_config(self.model_name, self.model_description, self.hyperparameters)
+        self.config_logger.log_training_config(self.model_description, self.hyperparameters)

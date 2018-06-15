@@ -82,8 +82,6 @@ class HeadlinePreprocessor(Preprocessor):
 
 
 def train():
-    settings = Settings()
-
     hyper_parameters = {}
 
     hyper_parameters['dictionary_size'] = 40000
@@ -110,7 +108,7 @@ def train():
     plot_config = [('f1', (0.1, 0.0, 0.9), 'f1-score'), ('val_f1', 'g', 'validation f1-score')]
     plot_callback = CSVPlotterCallback(csv_logger.csv_file, plot_config)
 
-    config_log_callback = ConfigLoggerCallback(model.name, timestamp, model_builder.get_model_description(), hyper_parameters)
+    config_log_callback = ConfigLoggerCallback(model, timestamp, model_builder.get_model_description(), hyper_parameters)
 
     training_input = [preprocessor.training_data['headlines']]
     training_output = [preprocessor.training_data['is_top_submission']]
