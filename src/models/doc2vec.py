@@ -24,7 +24,10 @@ class Doc2Vec:
         else:
             self.train_model(tag, dimensions)
             print('saving model ...')
-            os.makedirs(doc2vec_dir)
+            try:
+                os.makedirs(doc2vec_dir)
+            except FileExistsError:
+                pass
             self.model.save(doc2vec_file)
 
     def train_model(self, tag, dimensions):
@@ -36,9 +39,8 @@ class Doc2Vec:
         print('training model ...')
         if tag == 'headline':
             column = LabelsView.HEADLINE.value
-        elif tag == 'text':
-            # TODO
-            pass
+        elif tag == 'article':
+            column = LabelsView.ARTICLE.value
         else:
             raise ValueError('tag is not accepted')
 
