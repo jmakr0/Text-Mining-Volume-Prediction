@@ -27,7 +27,7 @@ class PostgresDb:
     def get_dicts(self, db_fields_enum):
         try:
             table = db_fields_enum.__name__.lower()
-            select = 'SELECT * FROM {} ORDER BY unix_timestamp ASC'.format(table)
+            select = 'SELECT * FROM {} ORDER BY {} ASC'.format(table, 'unix_timestamp')
             self.cur.execute(select)
             return self.cur.fetchall()
         except Exception as e:

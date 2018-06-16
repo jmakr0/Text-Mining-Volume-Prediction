@@ -28,9 +28,14 @@ class Preprocessor:
 
         random.seed(seed)
 
-        training_data = random.shuffle(data[:num_train_tuples])
-        validation_data = random.shuffle(data[num_train_tuples:num_train_tuples + num_validation_tuples])
-        test_data = random.shuffle(data[num_train_tuples + num_validation_tuples:])
+        training_data = data[:num_train_tuples]
+        validation_data = data[num_train_tuples:num_train_tuples + num_validation_tuples]
+        test_data = data[num_train_tuples + num_validation_tuples:]
+
+        # shuffle data
+        random.shuffle(training_data)
+        random.shuffle(validation_data)
+        random.shuffle(test_data)
 
         return training_data, validation_data, test_data
 
