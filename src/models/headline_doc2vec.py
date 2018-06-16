@@ -3,7 +3,7 @@ from keras import Input, Model
 from keras.layers import Dense, BatchNormalization
 
 from src.data_handler.db_fields import LabelsView
-from src.embedder.doc2vec import Doc2Vec
+from src.encoder.doc2vec import Doc2Vec
 from src.models.model_builder import ModelBuilder
 from src.models.preprocessor import Preprocessor
 from src.utils.f1_score import f1, precision, recall

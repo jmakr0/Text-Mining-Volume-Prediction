@@ -4,7 +4,7 @@ from keras.layers import Embedding, GlobalAveragePooling1D, Dense, BatchNormaliz
 from keras.preprocessing import sequence
 
 from src.data_handler.db_fields import LabelsView
-from src.embedder.glove import Glove
+from src.encoder.glove import Glove
 from src.models.model_builder import ModelBuilder
 from src.models.preprocessor import Preprocessor
 from src.utils.f1_score import f1, precision, recall
