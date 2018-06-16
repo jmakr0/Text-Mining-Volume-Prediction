@@ -5,9 +5,9 @@ from keras.preprocessing import sequence
 from src.utils.logging.callback_builder import CallbackBuilder
 
 from src.data_handler.db_fields import LabelsView
-from src.models.glove import Glove
-from src.prediction.model_builder import ModelBuilder
-from src.prediction.preprocessor import Preprocessor
+from src.embedder.glove import Glove
+from src.models.model_builder import ModelBuilder
+from src.models.preprocessor import Preprocessor
 from src.utils.f1_score import f1, precision, recall
 from src.utils.logging.callbacks.config_logger import ConfigLogger
 from src.utils.logging.callbacks.csv_logger import CsvLogger

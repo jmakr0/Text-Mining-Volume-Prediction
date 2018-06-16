@@ -1,4 +1,4 @@
-from src.prediction.headline_model import train
+from src.models.headline import train
 
 if __name__ == '__main__':
     train()

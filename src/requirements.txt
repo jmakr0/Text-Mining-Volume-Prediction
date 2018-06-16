@@ -36,3 +36,4 @@ tensorflow==1.8.0
 termcolor==1.1.0
 urllib3==1.22
 Werkzeug==0.14.1
+matplotlib==2.2.2

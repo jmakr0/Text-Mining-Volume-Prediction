@@ -3,9 +3,9 @@ from keras import Input, Model
 from keras.layers import Dense, BatchNormalization
 
 from src.data_handler.db_fields import LabelsView
-from src.models.doc2vec import Doc2Vec
-from src.prediction.model_builder import ModelBuilder
-from src.prediction.preprocessor import Preprocessor
+from src.embedder.doc2vec import Doc2Vec
+from src.models.model_builder import ModelBuilder
+from src.models.preprocessor import Preprocessor
 from src.utils.f1_score import precision, recall, f1
 from src.utils.logging.callback_builder import CallbackBuilder
 from src.utils.logging.callbacks.config_logger import ConfigLogger
