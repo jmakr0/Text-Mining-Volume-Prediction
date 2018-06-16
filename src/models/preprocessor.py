@@ -21,17 +21,16 @@ class Preprocessor:
     @staticmethod
     def split_data(data, seed=42, training_size=0.7, validation_size=0.15, test_size=0.15):
         assert (training_size + validation_size + test_size) == 1
-        # shuffle the same every time
-        random.seed(seed)
-        random.shuffle(data)
 
         num_tuples = len(data)
         num_train_tuples = int(num_tuples * training_size)
         num_validation_tuples = int(num_tuples * validation_size)
 
-        training_data = data[:num_train_tuples]
-        validation_data = data[num_train_tuples:num_train_tuples + num_validation_tuples]
-        test_data = data[num_train_tuples + num_validation_tuples:]
+        random.seed(seed)
+
+        training_data = random.shuffle(data[:num_train_tuples])
+        validation_data = random.shuffle(data[num_train_tuples:num_train_tuples + num_validation_tuples])
+        test_data = random.shuffle(data[num_train_tuples + num_validation_tuples:])
 
         return training_data, validation_data, test_data
 
