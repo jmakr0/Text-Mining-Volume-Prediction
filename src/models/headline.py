@@ -2,8 +2,10 @@ import numpy as np
 from keras import Input, Model
 from keras.layers import Embedding, GlobalAveragePooling1D, Dense, BatchNormalization
 from keras.preprocessing import sequence
+from keras.preprocessing.text import Tokenizer
 
 from src.data_handler.db_fields import LabelsView
+from src.data_handler.labels_db import LabelsDb
 from src.encoder.glove import Glove
 from src.models.model_builder import ModelBuilder
 from src.models.preprocessor import Preprocessor
@@ -15,7 +17,6 @@ from src.utils.logging.callbacks.csv_plotter import CsvPlotter
 
 
 class HeadlineModelBuilder(ModelBuilder):
-
     MODEL_IDENTIFIER = 'headline_model'
 
     def __init__(self):
@@ -34,12 +35,13 @@ class HeadlineModelBuilder(ModelBuilder):
 
         glove = self.inputs['glove']
         headline_input = Input(shape=(self.parameters['max_headline_length'],), name='headline_input')
-        headline_embedding = Embedding(glove.embedding_vectors.shape[0],
-                                       glove.embedding_vectors.shape[1],
-                                       weights=[glove.embedding_vectors])(headline_input)
+        headline_embedding = Embedding(glove.weights_matrix.shape[0],
+                                       glove.weights_matrix.shape[1],
+                                       weights=[glove.weights_matrix])(headline_input)
         headline_pooling = GlobalAveragePooling1D()(headline_embedding)
 
-        relu_fully_connected = Dense(self.parameters['relu_fully_connected_dimensions'], activation='relu')(headline_pooling)
+        relu_fully_connected = Dense(self.parameters['relu_fully_connected_dimensions'], activation='relu')(
+            headline_pooling)
         batch_normalization = BatchNormalization()(relu_fully_connected)
         main_output = Dense(1, activation='sigmoid', name=self.parameters['main_output'])(batch_normalization)
 
@@ -55,9 +57,9 @@ class HeadlineModelBuilder(ModelBuilder):
 
 class HeadlinePreprocessor(Preprocessor):
 
-    def __init__(self, model, glove, max_headline_length):
+    def __init__(self, model, tokenizer, max_headline_length):
         super().__init__(model)
-        self.glove = glove
+        self.tokenizer = tokenizer
         self.max_headline_length = max_headline_length
 
     def array_to_dict(self, data):
@@ -68,9 +70,10 @@ class HeadlinePreprocessor(Preprocessor):
         output_names = [l.name for l in self.model.output_layers]
 
         for article in data:
-            headlines.append(self.glove.text_to_sequence(article[LabelsView.HEADLINE.value]))
+            headlines.append(article[LabelsView.HEADLINE.value])
             is_top_submission.append(1 if article[LabelsView.IN_TOP_TEN_PERCENT.value] == 'TRUE' else 0)
 
+        headlines = self.tokenizer.texts_to_sequences(headlines)
         headlines = sequence.pad_sequences(headlines, maxlen=self.max_headline_length)
 
         result['headlines'] = np.array(headlines)
@@ -88,7 +91,12 @@ def train():
     hyper_parameters['batch_size'] = 64
     hyper_parameters['epochs'] = 20
 
-    glove = Glove(hyper_parameters['dictionary_size'])
+    headline_corpus = [article[LabelsView.HEADLINE.value] for article in LabelsDb().get_labeled_data()]
+
+    tokenizer = Tokenizer(hyper_parameters['dictionary_size'])
+    tokenizer.fit_on_texts(headline_corpus)
+
+    glove = Glove(tokenizer)
     glove.load_embedding()
 
     model_builder = HeadlineModelBuilder() \
@@ -97,7 +105,7 @@ def train():
 
     model = model_builder()
 
-    preprocessor = HeadlinePreprocessor(model, glove, hyper_parameters['max_headline_length'])
+    preprocessor = HeadlinePreprocessor(model, tokenizer, hyper_parameters['max_headline_length'])
     preprocessor.load_data()
 
     callbacks = CallbackBuilder(model, hyper_parameters, [CsvLogger, CsvPlotter, ConfigLogger])()
@@ -110,5 +118,6 @@ def train():
 
     class_weights = preprocessor.training_data['class_weights']
 
-    model.fit(training_input, training_output, batch_size=hyper_parameters['batch_size'], epochs=hyper_parameters['epochs'], callbacks=callbacks,
+    model.fit(training_input, training_output, batch_size=hyper_parameters['batch_size'],
+              epochs=hyper_parameters['epochs'], callbacks=callbacks,
               validation_data=(validation_input, validation_output), class_weight=class_weights)
