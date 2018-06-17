@@ -11,7 +11,7 @@ class TfIdf:
         self.tokenizer = tokenizer
 
     def get_tfidf_matrix_for_corpus(self, corpus):
-        return self.tokenizer.texts_to_matrix(self.corpus, mode='tfidf')
+        return self.tokenizer.texts_to_matrix(corpus, mode='tfidf')
 
 
 

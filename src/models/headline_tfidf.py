@@ -4,7 +4,9 @@ from keras.layers import Embedding, GlobalAveragePooling1D, Dense, BatchNormaliz
 from keras.preprocessing import sequence
 
 from src.data_handler.db_fields import LabelsView
+from src.data_handler.labels_db import LabelsDb
 from src.encoder.glove import Glove
+from src.encoder.glove_tf_idf import GloveTfIdf
 from src.models.model_builder import ModelBuilder
 from src.models.preprocessor import Preprocessor
 from src.utils.f1_score import f1, precision, recall
@@ -88,9 +90,10 @@ def train():
     hyper_parameters['batch_size'] = 64
     hyper_parameters['epochs'] = 20
 
-    preprocessor.training_data['headlines']
-    glove_tfidf = Glove(hyper_parameters['dictionary_size'])
-    glove.load_embedding()
+    headline_corpus = [article [LabelsView.HEADLINE.value] for article in LabelsDb().get_labeled_data()]
+
+    glove_tfidf = GloveTfIdf(headline_corpus, hyper_parameters['dictionary_size'])
+    glove_tfidf.create_weighted_glove()
 
     model_builder = HeadlineTfIdfModelBuilder() \
         .set_input('glove_tfidf', glove_tfidf) \
@@ -98,8 +101,10 @@ def train():
 
     model = model_builder()
 
-    preprocessor = HeadlinePreprocessor(model, glove, hyper_parameters['max_headline_length'])
+    preprocessor = HeadlineTfIdfPreprocessor(model, glove, hyper_parameters['max_headline_length'])
     preprocessor.load_data()
+
+    preprocessor.training_data['headlines']
 
     callbacks = CallbackBuilder(model, hyper_parameters, [CsvLogger, CsvPlotter, ConfigLogger])()
 

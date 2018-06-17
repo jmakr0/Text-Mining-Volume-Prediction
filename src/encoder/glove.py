@@ -13,8 +13,8 @@ class Glove:
         settings = Settings()
         self.embedding_path = settings.get_glove_embedding()
 
-        self.weights_matrix = {}
-        self.embedding_vectors = np.zeros((max_features + 1, self.DIMENSIONS))
+        self.weights_matrix = np.zeros((max_features + 1, self.DIMENSIONS))
+        self.embedding_vectors = {}
         self._init_weight_matrix()
 
     def _init_weight_matrix(self):
@@ -24,18 +24,17 @@ class Glove:
                 line_split = line.strip().split(" ")
                 vec = np.array(line_split[1:], dtype=float)
                 word = line_split[0]
+                # word_index = self.tokenizer.word_index[word]
                 self.embedding_vectors[word] = vec
-
-        weights_matrix = np.zeros((self.max_features + 1, 50))
 
         for word, i in self.tokenizer.word_index.items():
 
             embedding_vector = self.embedding_vectors.get(word)
             if embedding_vector is not None and i <= self.max_features:
-                weights_matrix[i] = embedding_vector
+                self.weights_matrix[i] = embedding_vector
 
-    def get_embedding_for_wordindex(self, word_index):
-        self.weights_matrix[word_index]
+    def get_word_index_embedding(self, word_index):
+        return self.weights_matrix[word_index]
 
 
 
@@ -63,7 +62,7 @@ class Glove:
     #             if line_number == self.dictionary_size:
     #                 break
     #
-    # def get_word_number(self, word):
+    # def get_word_index(self, word):
     #     if len(self.word_numbers) == 0:
     #         raise Exception('No embedding loaded.')
     #
