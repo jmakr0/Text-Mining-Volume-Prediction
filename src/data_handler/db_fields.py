@@ -43,6 +43,13 @@ class GuardianApiError(Enum):
     REASON = 'reason'
 
 
+class Doc2Vec(Enum):
+    ID = 'article_id'
+    VECTOR = 'vector'
+    DIMENSIONS = 'dimensions'
+    TAG = 'tag'
+
+
 class LabelsView(Enum):
     ID = 'article_id'
     HEADLINE = 'headline'
@@ -58,3 +65,4 @@ class LabelsView(Enum):
     DAY_OF_YEAR = 'day_of_year'
     HOUR = 'hour'
     MINUTE = 'minute'
+    COMPETITIVE_SCORE = 'competitive_score'

@@ -22,7 +22,7 @@ class Doc2Vec:
             print('loading doc2vec model ...')
             self.model = doc2vec.Doc2Vec.load(doc2vec_file)
         else:
-            self.train_model(tag, dimensions)
+            self._train_model(tag, dimensions)
             print('saving model ...')
             try:
                 os.makedirs(doc2vec_dir)
@@ -30,7 +30,7 @@ class Doc2Vec:
                 pass
             self.model.save(doc2vec_file)
 
-    def train_model(self, tag, dimensions):
+    def _train_model(self, tag, dimensions):
         """
         :param tag: Defines on which dataset to train. Choose either 'headline' or 'text'.
         :param dimensions:
