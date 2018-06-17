@@ -39,7 +39,7 @@ class PostgresDb:
         try:
             table = db_fields_enum.__name__.lower()
 
-            none_empty_columns = list(filter(lambda e: dict[e.value], db_fields_enum))
+            none_empty_columns = list(filter(lambda e: dict[e.value] != '', db_fields_enum))
             columns = list(map(lambda e: e.value, none_empty_columns))
             values = [dict[col] for col in columns]
 
