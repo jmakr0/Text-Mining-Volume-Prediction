@@ -24,10 +24,15 @@ class PostgresDb:
             print("cant get dict")
             print(e)
 
-    def get_dicts(self, db_fields_enum):
+    def get_dicts(self, db_fields_enum, db_ordered_enum=None):
         try:
             table = db_fields_enum.__name__.lower()
-            select = 'SELECT * FROM {} ORDER BY {} ASC'.format(table, 'unix_timestamp')
+            select = 'SELECT * FROM {}'.format(table)
+
+            if db_ordered_enum:
+                select += ' ORDER BY {} '.format(db_fields_enum.TIMESTAMP.value)
+                select += db_ordered_enum.name
+
             self.cur.execute(select)
             return self.cur.fetchall()
         except Exception as e:
