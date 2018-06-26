@@ -86,7 +86,7 @@ def train():
     hyper_parameters['dictionary_size'] = 40000
     hyper_parameters['max_headline_length'] = 20
     hyper_parameters['batch_size'] = 64
-    hyper_parameters['epochs'] = 20
+    hyper_parameters['epochs'] = 2
 
     glove = Glove(hyper_parameters['dictionary_size'])
     glove.load_embedding()

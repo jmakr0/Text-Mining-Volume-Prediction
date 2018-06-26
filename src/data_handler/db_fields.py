@@ -53,7 +53,7 @@ class LabelsView(Enum):
     COMMENT_PERFORMANCE_WEEKLY = 'comment_performance_weekly'
     IN_TOP_TEN_PERCENT = 'in_top_ten_percent'
     COMMENT_COUNT = 'comment_count'
-    TIMESTAMP = 'unix_timestamp'
+    UNIX_TIMESTAMP = 'unix_timestamp'
     DAY_OF_WEEK = 'day_of_week'
     DAY_OF_YEAR = 'day_of_year'
     HOUR = 'hour'
