@@ -50,7 +50,7 @@ class Glove:
         seq = text.split()
         return [word for word in seq if word]
 
-    def text_to_sequence(self, text):
+    def text_to_sequence(self, text, limit=None):
         vector = []
 
         if isinstance(text, list):
@@ -58,7 +58,13 @@ class Glove:
         else:
             seq = self._text_to_word_sequence(text)
 
-        for word in seq:
+        if limit:
+            limit = min(len(seq),limit)
+        else:
+            limit = len(seq)
+
+        for i in range(limit):
+            word = seq[i]
             vector.append(self.get_word_number(word))
 
         return vector
