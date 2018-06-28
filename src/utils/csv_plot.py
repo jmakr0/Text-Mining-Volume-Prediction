@@ -39,7 +39,7 @@ class CsvPlotter:
         plt.xlabel('epoch')
 
         # set interval of x axis
-        loc = plticker.MultipleLocator(base=2.0)
+        loc = plticker.MultipleLocator(base=round(len(epochs)/10))
         ax.xaxis.set_major_locator(loc)
 
         for attribute, color, display_name in config:
