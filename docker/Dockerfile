@@ -1,4 +1,4 @@
-FROM python:3.6-stretch
+FROM nvidia/cuda
 
 # Install software
 RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get -y install openssh-server wget curl git htop screen redis-tools tmux sudo
