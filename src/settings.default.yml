@@ -5,7 +5,7 @@ database:
   user: user
   password: password
 
-guardian-csv:
+guardian_csv:
   articles: filepath
   authors: filepath
   comments: filepath
@@ -16,8 +16,22 @@ embeddings:
 models:
   doc2vec_dir: filepath
 
-guardian-api:
+guardian_api:
   keys: ['test']
 
-training-results:
-  root-dir: dirpath
+training_results:
+  root_dir: dirpath
+
+training_parameters:
+  default:
+    batch_size: 64
+    epochs: 50
+    dictionary_size: 40000
+    max_headline_length: 20
+    body_begin_length: 100
+    max_article_length: 20000
+    headline_doc2vec_dimensions: 50
+    article_doc2vec_dimensions: 300
+  choices:
+    headline_doc2vec_dimensions: [50, 100, 300]
+    article_doc2vec_dimensions: [50, 100, 300]

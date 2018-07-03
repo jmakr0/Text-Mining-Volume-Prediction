@@ -2,7 +2,8 @@ from argparse import ArgumentParser
 
 import numpy as np
 from keras import Input, Model
-from keras.layers import Embedding, GlobalAveragePooling1D, Dense, BatchNormalization
+from keras.layers import Embedding, Dense, Dropout, Conv1D, MaxPooling1D, \
+    LSTM
 from keras.preprocessing import sequence
 
 from src.data_handler.db_fields import LabelsView
@@ -17,66 +18,66 @@ from src.utils.logging.callbacks.csv_plotter import CsvPlotter
 from src.utils.settings import Settings
 
 
-class HeadlineModelBuilder(ModelBuilder):
-    MODEL_IDENTIFIER = 'headline_model'
+class LstmBodyBeginModelBuilder(ModelBuilder):
+    MODEL_IDENTIFIER = 'lstm_body_begin'
 
     def __init__(self):
         super().__init__()
 
         self.required_inputs.append('glove')
-        self.required_parameters.append('max_headline_length')
+        self.required_parameters.append('body_begin_length')
 
-        self.default_parameters['relu_fully_connected_dimensions'] = 256
         self.default_parameters['optimizer'] = 'adam'
         self.default_parameters['loss'] = 'binary_crossentropy'
         self.default_parameters['main_output'] = 'main_output'
+        self.default_parameters['lstm_units'] = 100
 
     def __call__(self):
         super().prepare_building()
 
         glove = self.inputs['glove']
-        headline_input = Input(shape=(self.parameters['max_headline_length'],), name='headline_input')
+
+        body_begin_input = Input(shape=(self.parameters['body_begin_length'],), name='body_begin_input')
+
         headline_embedding = Embedding(glove.embedding_vectors.shape[0],
                                        glove.embedding_vectors.shape[1],
-                                       weights=[glove.embedding_vectors])(headline_input)
-        headline_pooling = GlobalAveragePooling1D()(headline_embedding)
+                                       weights=[glove.embedding_vectors],
+                                       trainable=False)(body_begin_input)
 
-        relu_fully_connected = Dense(self.parameters['relu_fully_connected_dimensions'], activation='relu')(
-            headline_pooling)
-        batch_normalization = BatchNormalization()(relu_fully_connected)
-        main_output = Dense(1, activation='sigmoid', name=self.parameters['main_output'])(batch_normalization)
+        lstm = LSTM(self.default_parameters['lstm_units'])(headline_embedding)
 
-        model = Model(inputs=[headline_input], outputs=[main_output], name=self.MODEL_IDENTIFIER)
+        main_out = Dense(1, activation='sigmoid', name=self.default_parameters['main_output'])(lstm)
 
-        model.compile(loss=self.parameters['loss'],
-                      optimizer=self.parameters['optimizer'],
+        model = Model(inputs=[body_begin_input], outputs=main_out, name=self.MODEL_IDENTIFIER)
+
+        model.compile(loss=self.default_parameters['loss'], optimizer=self.default_parameters['optimizer'],
                       metrics=['accuracy', precision, recall, f1])
 
         model.summary()
         return model
 
 
-class HeadlinePreprocessor(Preprocessor):
-
-    def __init__(self, model, glove, max_headline_length):
+class LstmBodyBeginPreprocessor(Preprocessor):
+    def __init__(self, model, glove, body_begin_length):
         super().__init__(model)
         self.glove = glove
-        self.max_headline_length = max_headline_length
+        self.body_begin_length = body_begin_length
 
     def array_to_dict(self, data):
         result = {}
-        headlines = []
+        body_beginnings = []
         is_top_submission = []
 
         output_names = [l.name for l in self.model.output_layers]
 
         for article in data:
-            headlines.append(self.glove.text_to_sequence(article[LabelsView.HEADLINE.value]))
+            body_begin = self.glove.text_to_sequence(article[LabelsView.ARTICLE.value], limit=self.body_begin_length)
+            body_beginnings.append(body_begin)
             is_top_submission.append(1 if article[LabelsView.IN_TOP_TEN_PERCENT.value] == 'TRUE' else 0)
 
-        headlines = sequence.pad_sequences(headlines, maxlen=self.max_headline_length)
+        body_beginnings = sequence.pad_sequences(body_beginnings, maxlen=self.body_begin_length)
 
-        result['headlines'] = np.array(headlines)
+        result['body_beginnings'] = np.array(body_beginnings)
         result['is_top_submission'] = np.array(is_top_submission, dtype=int)
         result['class_weights'] = self.calculate_class_weights(result['is_top_submission'], output_names)
 
@@ -91,28 +92,28 @@ def train():
     arg_parse.add_argument('--batch_size', type=int, default=default_parameters['batch_size'])
     arg_parse.add_argument('--epochs', type=int, default=default_parameters['epochs'])
     arg_parse.add_argument('--dictionary_size', type=int, default=default_parameters['dictionary_size'])
-    arg_parse.add_argument('--max_headline_length', type=int, default=default_parameters['max_headline_length'])
+    arg_parse.add_argument('--body_begin_length', type=int, default=default_parameters['body_begin_length'])
 
     arguments = arg_parse.parse_args()
 
     glove = Glove(arguments.dictionary_size)
     glove.load_embedding()
 
-    model_builder = HeadlineModelBuilder() \
+    model_builder = LstmBodyBeginModelBuilder() \
         .set_input('glove', glove) \
-        .set_parameter('max_headline_length', arguments.max_headline_length)
+        .set_parameter('body_begin_length', arguments.body_begin_length)
 
     model = model_builder()
 
-    preprocessor = HeadlinePreprocessor(model, glove, arguments.max_headline_length)
+    preprocessor = LstmBodyBeginPreprocessor(model, glove, arguments.body_begin_length)
     preprocessor.load_data()
 
     callbacks = CallbackBuilder(model, arguments, [CsvLogger, CsvPlotter, ConfigLogger])()
 
-    training_input = [preprocessor.training_data['headlines']]
+    training_input = [preprocessor.training_data['body_beginnings']]
     training_output = [preprocessor.training_data['is_top_submission']]
 
-    validation_input = [preprocessor.validation_data['headlines']]
+    validation_input = [preprocessor.validation_data['body_beginnings']]
     validation_output = [preprocessor.validation_data['is_top_submission']]
 
     class_weights = preprocessor.training_data['class_weights']

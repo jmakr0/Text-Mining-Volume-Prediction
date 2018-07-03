@@ -1,3 +1,5 @@
+from argparse import ArgumentParser
+
 import numpy as np
 from keras import Input, Model
 from keras.layers import Dense, BatchNormalization
@@ -11,6 +13,7 @@ from src.utils.logging.callback_builder import CallbackBuilder
 from src.utils.logging.callbacks.config_logger import ConfigLogger
 from src.utils.logging.callbacks.csv_logger import CsvLogger
 from src.utils.logging.callbacks.csv_plotter import CsvPlotter
+from src.utils.settings import Settings
 
 
 class HeadlineDoc2VecModelBuilder(ModelBuilder):
@@ -72,13 +75,20 @@ class HeadlineDoc2VecPreprocessor(Preprocessor):
 
 
 def train():
-    hyper_parameters = {}
+    settings = Settings()
+    default_parameters = settings.get_training_parameter_default()
+    choices_parameters = settings.get_training_parameter_choices()
 
-    hyper_parameters['batch_size'] = 64
-    hyper_parameters['epochs'] = 50
+    arg_parse = ArgumentParser()
+    arg_parse.add_argument('--batch_size', type=int, default=default_parameters['batch_size'])
+    arg_parse.add_argument('--epochs', type=int, default=default_parameters['epochs'])
+    arg_parse.add_argument('--h_doc2vec_dim', type=int, default=default_parameters['headline_doc2vec_dimensions'],
+                           choices=choices_parameters['headline_doc2vec_dimensions'])
+
+    arguments = arg_parse.parse_args()
 
     headline_doc2vec = Doc2Vec()
-    headline_doc2vec.load_model('headline', 100)
+    headline_doc2vec.load_model('headline', arguments.h_doc2vec_dim)
 
     model_builder = HeadlineDoc2VecModelBuilder() \
         .set_input('headline_doc2vec', headline_doc2vec)
@@ -87,7 +97,7 @@ def train():
     preprocessor = HeadlineDoc2VecPreprocessor(model, headline_doc2vec)
     preprocessor.load_data()
 
-    callbacks = CallbackBuilder(model, hyper_parameters, [CsvLogger, CsvPlotter, ConfigLogger])()
+    callbacks = CallbackBuilder(model, arguments, [CsvLogger, CsvPlotter, ConfigLogger])()
 
     training_input = [preprocessor.training_data['headlines']]
     training_output = [preprocessor.training_data['is_top_submission']]
@@ -97,6 +107,6 @@ def train():
 
     class_weights = preprocessor.training_data['class_weights']
 
-    model.fit(training_input, training_output, batch_size=hyper_parameters['batch_size'],
-              epochs=hyper_parameters['epochs'], callbacks=callbacks,
+    model.fit(training_input, training_output, batch_size=arguments.batch_size,
+              epochs=arguments.epochs, callbacks=callbacks,
               validation_data=(validation_input, validation_output), class_weight=class_weights)
