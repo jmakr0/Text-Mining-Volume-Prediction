@@ -6,13 +6,13 @@ class LabelsDb(PostgresDb):
 
     def get_labeled_data(self):
         # don't use articles with exact 50 comments
-        where_1 = 'NOT {}=50'.format(LabelsView.COMMENT_COUNT.value)
+        where_50_comments = 'NOT {}=50'.format(LabelsView.COMMENT_COUNT.value)
 
         # don't use articles published on 29th of February
-        where_2 = "NOT (date_part('day'::text, to_timestamp({0}))=29 AND date_part('month'::text, to_timestamp({0}))=2)".format(
+        where_leapyear = "NOT (date_part('day'::text, to_timestamp({0}))=29 AND date_part('month'::text, to_timestamp({0}))=2)".format(
             LabelsView.UNIX_TIMESTAMP.value)
 
-        where_param = ' AND '.join([where_1, where_2])
+        where_param = ' AND '.join([where_50_comments, where_leapyear])
 
         # get data sorted by the article timestamp
         order_by_param = LabelsView.UNIX_TIMESTAMP.value + ' ASC'
