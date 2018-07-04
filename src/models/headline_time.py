@@ -57,7 +57,7 @@ class HeadlineTimeModelBuilder(ModelBuilder):
         minute_reshape = Reshape((self.parameters['minute_embedding_dimensions'],))(minute_embedding)
 
         day_of_week_input = Input(shape=(1,), name='day_of_week_input')
-        day_of_week_embedding = Embedding(60, self.parameters['day_of_week_embedding_dimensions'])(day_of_week_input)
+        day_of_week_embedding = Embedding(7, self.parameters['day_of_week_embedding_dimensions'])(day_of_week_input)
         day_of_week_reshape = Reshape((self.parameters['day_of_week_embedding_dimensions'],))(day_of_week_embedding)
 
         day_of_year_input = Input(shape=(1,), name='day_of_year_input')
