@@ -78,7 +78,7 @@ def train():
     hyper_parameters['epochs'] = 50
 
     headline_doc2vec = Doc2Vec()
-    headline_doc2vec.load_model('headline', 100)
+    headline_doc2vec.load_model('article', 50)
 
     model_builder = HeadlineDoc2VecModelBuilder() \
         .set_input('headline_doc2vec', headline_doc2vec)
