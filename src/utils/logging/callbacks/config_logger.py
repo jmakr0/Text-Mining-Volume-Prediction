@@ -20,6 +20,6 @@ class ConfigLogger(Callback):
             print(s, file=f)
 
     def on_train_end(self, logs=None):
-        log_text = 'MODEL NAME:\n{}\nHYPER PARAMETERS:\n{}\nHYPER PARAMETERS:\n{}'.format(self.model.name, str(self.hyper_parameters), str(self.default_parameters))
+        log_text = 'MODEL NAME:\n{}\nHYPER PARAMETERS:\n{}\nDEFAULT PARAMETERS:\n{}'.format(self.model.name, str(self.hyper_parameters), str(self.default_parameters))
         with open(self.filename, "w") as f:
             f.write(log_text)
