@@ -1,3 +1,5 @@
+from argparse import ArgumentParser
+
 import numpy as np
 from keras import Input, Model
 from keras.layers import Embedding, concatenate, Dense, BatchNormalization, Reshape
@@ -11,6 +13,7 @@ from src.utils.logging.callback_builder import CallbackBuilder
 from src.utils.logging.callbacks.config_logger import ConfigLogger
 from src.utils.logging.callbacks.csv_logger import CsvLogger
 from src.utils.logging.callbacks.csv_plotter import CsvPlotter
+from src.utils.settings import Settings
 
 
 class TextMetricsModelBuilder(ModelBuilder):
@@ -40,13 +43,15 @@ class TextMetricsModelBuilder(ModelBuilder):
         headline_word_count_embedding = Embedding(headline_numeric_log.max_log_value() + 1,
                                                   self.parameters['headline_numeric_log_embedding_dimensions'])(
             headline_word_count_input)
-        headline_word_count_reshape = Reshape((self.parameters['headline_numeric_log_embedding_dimensions'],))(headline_word_count_embedding)
+        headline_word_count_reshape = Reshape((self.parameters['headline_numeric_log_embedding_dimensions'],))(
+            headline_word_count_embedding)
 
         article_word_count_input = Input(shape=(1,), name='article_word_count_input')
         article_word_count_embedding = Embedding(article_numeric_log.max_log_value() + 1,
                                                  self.parameters['article_numeric_log_embedding_dimensions'])(
             article_word_count_input)
-        article_word_count_reshape = Reshape((self.parameters['article_numeric_log_embedding_dimensions'],))(article_word_count_embedding)
+        article_word_count_reshape = Reshape((self.parameters['article_numeric_log_embedding_dimensions'],))(
+            article_word_count_embedding)
 
         embedding_concatenation = concatenate([headline_word_count_reshape, article_word_count_reshape])
 
@@ -95,13 +100,19 @@ class TextMetricsModelPreprocessor(Preprocessor):
 
 
 def train():
-    hyper_parameters = {
-        'batch_size': 64,
-        'epochs': 50
-    }
+    settings = Settings()
+    default_parameters = settings.get_training_parameter_default()
 
-    headline_numeric_log = NumericLog(20)
-    article_numeric_log = NumericLog(10000)
+    arg_parse = ArgumentParser()
+    arg_parse.add_argument('--batch_size', type=int, default=default_parameters['batch_size'])
+    arg_parse.add_argument('--epochs', type=int, default=default_parameters['epochs'])
+    arg_parse.add_argument('--max_headline_length', type=int, default=default_parameters['max_headline_length'])
+    arg_parse.add_argument('--max_article_length', type=int, default=default_parameters['max_article_length'])
+
+    arguments = arg_parse.parse_args()
+
+    headline_numeric_log = NumericLog(arguments.max_headline_length)
+    article_numeric_log = NumericLog(arguments.max_article_length)
 
     model_builder = TextMetricsModelBuilder().set_input('headline_numeric_log', headline_numeric_log).set_input(
         'article_numeric_log', article_numeric_log)
@@ -110,7 +121,7 @@ def train():
     preprocessor = TextMetricsModelPreprocessor(model, headline_numeric_log, article_numeric_log)
     preprocessor.load_data()
 
-    callbacks = CallbackBuilder(model, hyper_parameters, [CsvLogger, CsvPlotter, ConfigLogger])()
+    callbacks = CallbackBuilder(model, arguments, [CsvLogger, CsvPlotter, ConfigLogger])()
 
     training_input = [preprocessor.training_data['headline_numeric_logs'],
                       preprocessor.training_data['article_numeric_logs']]
@@ -122,6 +133,6 @@ def train():
 
     class_weights = preprocessor.training_data['class_weights']
 
-    model.fit(training_input, training_output, batch_size=hyper_parameters['batch_size'],
-              epochs=hyper_parameters['epochs'], callbacks=callbacks,
+    model.fit(training_input, training_output, batch_size=arguments.batch_size,
+              epochs=arguments.epochs, callbacks=callbacks,
               validation_data=(validation_input, validation_output), class_weight=class_weights)

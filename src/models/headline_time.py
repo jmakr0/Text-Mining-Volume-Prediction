@@ -1,21 +1,23 @@
+from argparse import ArgumentParser
+
 import numpy as np
 from keras import Input, Model
 from keras.layers import Embedding, GlobalAveragePooling1D, Dense, Reshape, concatenate, BatchNormalization
 from keras.preprocessing import sequence
-from src.utils.logging.callback_builder import CallbackBuilder
 
 from src.data_handler.db_fields import LabelsView
 from src.encoder.glove import Glove
 from src.models.model_builder import ModelBuilder
 from src.models.preprocessor import Preprocessor
 from src.utils.f1_score import f1, precision, recall
+from src.utils.logging.callback_builder import CallbackBuilder
 from src.utils.logging.callbacks.config_logger import ConfigLogger
 from src.utils.logging.callbacks.csv_logger import CsvLogger
 from src.utils.logging.callbacks.csv_plotter import CsvPlotter
+from src.utils.settings import Settings
 
 
 class HeadlineTimeModelBuilder(ModelBuilder):
-
     MODEL_IDENTIFIER = 'headline_time_model'
 
     def __init__(self):
@@ -55,7 +57,7 @@ class HeadlineTimeModelBuilder(ModelBuilder):
         minute_reshape = Reshape((self.parameters['minute_embedding_dimensions'],))(minute_embedding)
 
         day_of_week_input = Input(shape=(1,), name='day_of_week_input')
-        day_of_week_embedding = Embedding(60, self.parameters['day_of_week_embedding_dimensions'])(day_of_week_input)
+        day_of_week_embedding = Embedding(7, self.parameters['day_of_week_embedding_dimensions'])(day_of_week_input)
         day_of_week_reshape = Reshape((self.parameters['day_of_week_embedding_dimensions'],))(day_of_week_embedding)
 
         day_of_year_input = Input(shape=(1,), name='day_of_year_input')
@@ -127,26 +129,30 @@ class HeadlineTimePreprocessor(Preprocessor):
 
 
 def train():
-    hyper_parameters = {}
+    settings = Settings()
+    default_parameters = settings.get_training_parameter_default()
 
-    hyper_parameters['dictionary_size'] = 40000
-    hyper_parameters['max_headline_length'] = 20
-    hyper_parameters['batch_size'] = 64
-    hyper_parameters['epochs'] = 20
+    arg_parse = ArgumentParser()
+    arg_parse.add_argument('--batch_size', type=int, default=default_parameters['batch_size'])
+    arg_parse.add_argument('--epochs', type=int, default=default_parameters['epochs'])
+    arg_parse.add_argument('--dictionary_size', type=int, default=default_parameters['dictionary_size'])
+    arg_parse.add_argument('--max_headline_length', type=int, default=default_parameters['max_headline_length'])
 
-    glove = Glove(hyper_parameters['dictionary_size'])
+    arguments = arg_parse.parse_args()
+
+    glove = Glove(arguments.dictionary_size)
     glove.load_embedding()
 
     model_builder = HeadlineTimeModelBuilder() \
         .set_input('glove', glove) \
-        .set_parameter('max_headline_length', hyper_parameters['max_headline_length'])
+        .set_parameter('max_headline_length', arguments.max_headline_length)
 
     model = model_builder()
 
-    preprocessor = HeadlineTimePreprocessor(model, glove, hyper_parameters['max_headline_length'])
+    preprocessor = HeadlineTimePreprocessor(model, glove, arguments.max_headline_length)
     preprocessor.load_data()
 
-    callbacks = CallbackBuilder(model, hyper_parameters, [CsvLogger, CsvPlotter, ConfigLogger])()
+    callbacks = CallbackBuilder(model, arguments, [CsvLogger, CsvPlotter, ConfigLogger])()
 
     training_input = [preprocessor.training_data['headlines'],
                       preprocessor.training_data['hours'],
@@ -167,5 +173,6 @@ def train():
 
     class_weights = preprocessor.training_data['class_weights']
 
-    model.fit(training_input, training_output, batch_size=hyper_parameters['batch_size'], epochs=hyper_parameters['epochs'], callbacks=callbacks,
+    model.fit(training_input, training_output, batch_size=arguments.batch_size, epochs=arguments.epochs,
+              callbacks=callbacks,
               validation_data=(validation_input, validation_output), class_weight=class_weights)
