@@ -21,11 +21,11 @@ class TimeModelBuilder(ModelBuilder):
     def __init__(self):
         super().__init__()
 
-        self.default_parameters['hour_embedding_dimensions'] = 64
-        self.default_parameters['minute_embedding_dimensions'] = 64
-        self.default_parameters['day_of_week_embedding_dimensions'] = 64
-        self.default_parameters['day_of_year_embedding_dimensions'] = 64
-        self.default_parameters['relu_fully_connected_dimensions'] = 256
+        self.default_parameters['hour_embedding_dimensions'] = 5
+        self.default_parameters['minute_embedding_dimensions'] = 5
+        self.default_parameters['day_of_week_embedding_dimensions'] = 5
+        self.default_parameters['day_of_year_embedding_dimensions'] = 5
+        self.default_parameters['relu_fully_connected_dimensions'] = 128
         self.default_parameters['optimizer'] = 'adam'
         self.default_parameters['loss'] = 'binary_crossentropy'
         self.default_parameters['main_output'] = 'main_output'
