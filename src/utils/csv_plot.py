@@ -1,6 +1,9 @@
 import os
+import matplotlib
+# prevent programm from crashing because of unset $DISPLAY environment variable
+if os.environ.get('DISPLAY', '') == '':
+    matplotlib.use('Agg')
 from os.path import basename
-
 import matplotlib.patches as mpatches
 import matplotlib.pyplot as plt
 import matplotlib.ticker as plticker
@@ -39,7 +42,9 @@ class CsvPlotter:
         plt.xlabel('epoch')
 
         # set interval of x axis
-        loc = plticker.MultipleLocator(base=round(len(epochs)/10))
+        tick = round(len(epochs) / 10) or 1
+
+        loc = plticker.MultipleLocator(base=tick)
         ax.xaxis.set_major_locator(loc)
 
         for attribute, color, display_name in config:
