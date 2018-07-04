@@ -1,20 +1,37 @@
 database:
-  guardian-article-downloads:
-    host: localhost
-    port: 6379
-    db: 0
+  host: db-host
+  port: 5432
+  dbname: postgres
+  user: user
+  password: password
 
-  download-errors:
-    host: localhost
-    db: 1
+guardian_csv:
+  articles: filepath
+  authors: filepath
+  comments: filepath
 
-  articles:
-    db: 2
+embeddings:
+  glove: filepath
 
-csv:
-  articles-file: filepath
-  authors-file: filepath
-  comments-file: filepath
+models:
+  doc2vec_dir: filepath
 
-guardian-api:
+guardian_api:
   keys: ['test']
+
+training_results:
+  root_dir: dirpath
+
+training_parameters:
+  default:
+    batch_size: 64
+    epochs: 50
+    dictionary_size: 40000
+    max_headline_length: 20
+    body_begin_length: 100
+    max_article_length: 20000
+    headline_doc2vec_dimensions: 50
+    article_doc2vec_dimensions: 300
+  choices:
+    headline_doc2vec_dimensions: [50, 100, 300]
+    article_doc2vec_dimensions: [50, 100, 300]

@@ -1,34 +1,30 @@
-import pandas
+import csv
 
+from src.data_handler.db_fields import Comments, Articles, Authors
+from src.data_handler.postgres_db import PostgresDb
 from src.utils.settings import Settings
 
 
-class GuardianCsv:
+class GuardianCsvData:
     def __init__(self):
         settings = Settings()
 
+        self.db = PostgresDb()
         self.articles_filename = settings.get_csv_file('articles')
         self.authors_filename = settings.get_csv_file('authors')
         self.comments_filename = settings.get_csv_file('comments')
 
-        self._articles_df = None
-        self._authors_df = None
-        self._comments_df = None
+    def _import(self, filename, db_fields):
+        with open(filename, 'r', encoding='utf-8') as f:
+            reader = csv.DictReader(f)
+            for comment_dict in reader:
+                self.db.insert_dict(db_fields, comment_dict)
 
-    def _get_articles_df(self):
-        if not self._articles_df:
-            self._articles_df = pandas.read_csv(self.articles_filename)
-        return self._articles_df
+    def import_article(self):
+        self._import(self.articles_filename, Articles)
 
-    def _get_authors_df(self):
-        if not self._authors_df:
-            self._authors_df = pandas.read_csv(self.authors_filename)
-        return self._authors_df
+    def import_authors(self):
+        self._import(self.authors_filename, Authors)
 
-    def _get_comments_df(self):
-        if not self._comments_df:
-            self._comments_df = pandas.read_csv(self.comments_filename)
-        return self._comments_df
-
-    def get_url_tuples(self):
-        return self._get_articles_df().values.tolist()
+    def import_comments(self):
+        self._import(self.comments_filename, Comments)
