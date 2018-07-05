@@ -1,5 +1,3 @@
-from argparse import ArgumentParser
-
 import numpy as np
 from keras import Input, Model
 from keras.layers import Dense, BatchNormalization
@@ -88,7 +86,7 @@ def train():
     arguments = arg_parse.parse_args()
 
     headline_doc2vec = Doc2Vec()
-    headline_doc2vec.load_model('headline', arguments.h_doc2vec_dim)
+    headline_doc2vec.load_model('article', arguments.h_doc2vec_dim)
 
     model_builder = HeadlineDoc2VecModelBuilder() \
         .set_input('headline_doc2vec', headline_doc2vec)
@@ -97,7 +95,7 @@ def train():
     preprocessor = HeadlineDoc2VecPreprocessor(model, headline_doc2vec)
     preprocessor.load_data()
 
-    callbacks = CallbackBuilder(model, arguments, [CsvLogger, CsvPlotter, ConfigLogger])()
+    callbacks = CallbackBuilder(model, model_builder.default_parameters, arguments, [CsvLogger, CsvPlotter, ConfigLogger])()
 
     training_input = [preprocessor.training_data['headlines']]
     training_output = [preprocessor.training_data['is_top_submission']]

@@ -121,7 +121,7 @@ def train():
     preprocessor = TextMetricsModelPreprocessor(model, headline_numeric_log, article_numeric_log)
     preprocessor.load_data()
 
-    callbacks = CallbackBuilder(model, arguments, [CsvLogger, CsvPlotter, ConfigLogger])()
+    callbacks = CallbackBuilder(model, model_builder.default_parameters, arguments, [CsvLogger, CsvPlotter, ConfigLogger])()
 
     training_input = [preprocessor.training_data['headline_numeric_logs'],
                       preprocessor.training_data['article_numeric_logs']]
