@@ -130,7 +130,7 @@ def train():
     preprocessor = TimeCompetScorePreprocessor(model)
     preprocessor.load_data()
 
-    callbacks = CallbackBuilder(model, arguments, [CsvLogger, CsvPlotter, ConfigLogger])()
+    callbacks = CallbackBuilder(model, model_builder.default_parameters, arguments, [CsvLogger, CsvPlotter, ConfigLogger])()
 
     training_input = [preprocessor.training_data['hours'],
                       preprocessor.training_data['minutes'],
