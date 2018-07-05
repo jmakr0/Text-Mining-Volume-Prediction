@@ -97,7 +97,7 @@ def train():
     preprocessor = ArticleDoc2VecPreprocessor(model, article_doc2vec)
     preprocessor.load_data()
 
-    callbacks = CallbackBuilder(model, arguments, [CsvLogger, CsvPlotter, ConfigLogger])()
+    callbacks = CallbackBuilder(model, model_builder.default_parameters, arguments, [CsvLogger, CsvPlotter, ConfigLogger])()
 
     training_input = [preprocessor.training_data['articles']]
     training_output = [preprocessor.training_data['is_top_submission']]
