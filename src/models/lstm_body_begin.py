@@ -108,7 +108,7 @@ def train():
     preprocessor = LstmBodyBeginPreprocessor(model, glove, arguments.body_begin_length)
     preprocessor.load_data()
 
-    callbacks = CallbackBuilder(model, arguments, [CsvLogger, CsvPlotter, ConfigLogger])()
+    callbacks = CallbackBuilder(model, model_builder.default_parameters, arguments, [CsvLogger, CsvPlotter, ConfigLogger])()
 
     training_input = [preprocessor.training_data['body_beginnings']]
     training_output = [preprocessor.training_data['is_top_submission']]
