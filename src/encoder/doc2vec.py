@@ -1,5 +1,6 @@
 import os
 import random
+import logging
 
 from gensim.models import doc2vec
 from gensim.utils import simple_preprocess
@@ -7,6 +8,9 @@ from gensim.utils import simple_preprocess
 from src.data_handler.db_fields import LabelsView
 from src.data_handler.labels_db import LabelsDb
 from src.utils.settings import Settings
+
+# Set up log to terminal
+logging.basicConfig(format='%(asctime)s : %(levelname)s : %(message)s', level=logging.INFO)
 
 
 class Doc2Vec:
@@ -45,9 +49,9 @@ class Doc2Vec:
             raise ValueError('tag is not accepted')
 
         docs = self._load_docs(column)
-        self.model = doc2vec.Doc2Vec(vector_size=dimensions, min_count=5, epochs=200, workers=4)
+        self.model = doc2vec.Doc2Vec(vector_size=dimensions, min_count=5, epochs=50, workers=18)
         self.model.build_vocab(docs)
-        self.model.train(docs, total_examples=self.model.corpus_count, epochs=self.model.epochs)
+        self.model.train(docs, total_examples=self.model.corpus_count, epochs=self.model.epochs, report_delay=10)
 
     def _load_docs(self, column):
         data = self.db.get_labeled_data()
@@ -55,7 +59,8 @@ class Doc2Vec:
 
         for i, row in enumerate(data):
             value = row[column]
-            docs.append(doc2vec.TaggedDocument(simple_preprocess(value), [i]))
+            if value:
+                docs.append(doc2vec.TaggedDocument(simple_preprocess(value), [i]))
 
         random.seed(187)
         random.shuffle(docs)
