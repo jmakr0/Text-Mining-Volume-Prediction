@@ -34,8 +34,6 @@ class Preprocessor:
 
         # shuffle data
         random.shuffle(training_data)
-        random.shuffle(validation_data)
-        random.shuffle(test_data)
 
         return training_data, validation_data, test_data
 
