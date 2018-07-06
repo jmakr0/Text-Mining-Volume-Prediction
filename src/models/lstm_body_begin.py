@@ -2,8 +2,7 @@ from argparse import ArgumentParser
 
 import numpy as np
 from keras import Input, Model
-from keras.layers import Embedding, Dense, Dropout, Conv1D, MaxPooling1D, \
-    LSTM
+from keras.layers import Embedding, Dense, LSTM
 from keras.preprocessing import sequence
 
 from src.data_handler.db_fields import LabelsView
@@ -15,6 +14,7 @@ from src.utils.logging.callback_builder import CallbackBuilder
 from src.utils.logging.callbacks.config_logger import ConfigLogger
 from src.utils.logging.callbacks.csv_logger import CsvLogger
 from src.utils.logging.callbacks.csv_plotter import CsvPlotter
+from src.utils.logging.callbacks.model_saver import ModelSaver
 from src.utils.settings import Settings
 
 
@@ -108,7 +108,8 @@ def train():
     preprocessor = LstmBodyBeginPreprocessor(model, glove, arguments.body_begin_length)
     preprocessor.load_data()
 
-    callbacks = CallbackBuilder(model, model_builder.default_parameters, arguments, [CsvLogger, CsvPlotter, ConfigLogger])()
+    callbacks = CallbackBuilder(model, model_builder.default_parameters, arguments,
+                                [CsvLogger, CsvPlotter, ConfigLogger, ModelSaver])()
 
     training_input = [preprocessor.training_data['body_beginnings']]
     training_output = [preprocessor.training_data['is_top_submission']]
