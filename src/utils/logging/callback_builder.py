@@ -4,6 +4,7 @@ from time import strftime, gmtime
 from src.utils.logging.callbacks.config_logger import ConfigLogger
 from src.utils.logging.callbacks.csv_logger import CsvLogger
 from src.utils.logging.callbacks.csv_plotter import CsvPlotter
+from src.utils.logging.callbacks.model_saver import ModelSaver
 from src.utils.settings import Settings
 
 
@@ -38,5 +39,9 @@ class CallbackBuilder():
         if ConfigLogger in self.callback_classes:
             config_logger = ConfigLogger(self.model, self.default_parameters, self.hyper_parameters, log_path)
             self.active_callbacks.append(config_logger)
+
+        if ModelSaver in self.callback_classes:
+            model_saver = ModelSaver(self.model, log_path)
+            self.active_callbacks.append(model_saver)
 
         return self.active_callbacks

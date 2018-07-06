@@ -13,6 +13,7 @@ from src.utils.logging.callback_builder import CallbackBuilder
 from src.utils.logging.callbacks.config_logger import ConfigLogger
 from src.utils.logging.callbacks.csv_logger import CsvLogger
 from src.utils.logging.callbacks.csv_plotter import CsvPlotter
+from src.utils.logging.callbacks.model_saver import ModelSaver
 from src.utils.settings import Settings
 
 
@@ -97,7 +98,8 @@ def train():
     preprocessor = ArticleDoc2VecPreprocessor(model, article_doc2vec)
     preprocessor.load_data()
 
-    callbacks = CallbackBuilder(model, model_builder.default_parameters, arguments, [CsvLogger, CsvPlotter, ConfigLogger])()
+    callbacks = CallbackBuilder(model, model_builder.default_parameters, arguments,
+                                [CsvLogger, CsvPlotter, ConfigLogger, ModelSaver])()
 
     training_input = [preprocessor.training_data['articles']]
     training_output = [preprocessor.training_data['is_top_submission']]
