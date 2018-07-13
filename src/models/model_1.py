@@ -1,15 +1,13 @@
 from argparse import ArgumentParser
 
-import numpy as np
 from keras import Input, Model
 from keras.layers import Embedding, GlobalAveragePooling1D, Dense, BatchNormalization
-from keras.preprocessing import sequence
 
-from src.data_handler.db_fields import LabelsView
 from src.encoder.glove import Glove
 from src.models.model_builder import ModelBuilder
 from src.models.preprocessor import Preprocessor
-from src.utils.f1_score import f1, precision, recall
+from src.utils.calculate_class_weights import calculate_class_weights
+from src.utils.f1_score import precision, recall, f1
 from src.utils.logging.callback_builder import CallbackBuilder
 from src.utils.logging.callbacks.config_logger import ConfigLogger
 from src.utils.logging.callbacks.csv_logger import CsvLogger
@@ -18,19 +16,18 @@ from src.utils.logging.callbacks.model_saver import ModelSaver
 from src.utils.settings import Settings
 
 
-class HeadlineModelBuilder(ModelBuilder):
-    MODEL_IDENTIFIER = 'headline_model'
-
+class Model1Builder(ModelBuilder):
     def __init__(self):
         super().__init__()
 
         self.required_inputs.append('glove')
         self.required_parameters.append('max_headline_length')
 
-        self.default_parameters['relu_fully_connected_dimensions'] = 256
+        self.default_parameters['fully_connected_dimensions'] = 128
+        self.default_parameters['fully_connected_activation'] = 'tanh'
+
         self.default_parameters['optimizer'] = 'adam'
         self.default_parameters['loss'] = 'binary_crossentropy'
-        self.default_parameters['main_output'] = 'main_output'
 
     def __call__(self):
         super().prepare_building()
@@ -42,46 +39,22 @@ class HeadlineModelBuilder(ModelBuilder):
                                        weights=[glove.embedding_vectors])(headline_input)
         headline_pooling = GlobalAveragePooling1D()(headline_embedding)
 
-        relu_fully_connected = Dense(self.parameters['relu_fully_connected_dimensions'], activation='relu')(
-            headline_pooling)
-        batch_normalization = BatchNormalization()(relu_fully_connected)
-        main_output = Dense(1, activation='sigmoid', name=self.parameters['main_output'])(batch_normalization)
+        fully_connected = Dense(self.parameters['fully_connected_dimensions'],
+                                     activation=self.parameters['fully_connected_activation'])(headline_pooling)
+        batch_normalization = BatchNormalization()(fully_connected)
+        main_output = Dense(1, activation='sigmoid', name='output')(batch_normalization)
 
-        model = Model(inputs=[headline_input], outputs=[main_output], name=self.MODEL_IDENTIFIER)
+        model = Model(inputs=[headline_input], outputs=[main_output], name=self.model_identifier)
 
         model.compile(loss=self.parameters['loss'],
                       optimizer=self.parameters['optimizer'],
                       metrics=['accuracy', precision, recall, f1])
 
-        model.summary()
         return model
 
-
-class HeadlinePreprocessor(Preprocessor):
-
-    def __init__(self, model, glove, max_headline_length):
-        super().__init__(model)
-        self.glove = glove
-        self.max_headline_length = max_headline_length
-
-    def array_to_dict(self, data):
-        result = {}
-        headlines = []
-        is_top_submission = []
-
-        output_names = [l.name for l in self.model.output_layers]
-
-        for article in data:
-            headlines.append(self.glove.text_to_sequence(article[LabelsView.HEADLINE.value]))
-            is_top_submission.append(1 if article[LabelsView.IN_TOP_TEN_PERCENT.value] == 'TRUE' else 0)
-
-        headlines = sequence.pad_sequences(headlines, maxlen=self.max_headline_length)
-
-        result['headlines'] = np.array(headlines)
-        result['is_top_submission'] = np.array(is_top_submission, dtype=int)
-        result['class_weights'] = self.calculate_class_weights(result['is_top_submission'], output_names)
-
-        return result
+    @property
+    def model_identifier(self):
+        return 'model_1'
 
 
 def train():
@@ -91,34 +64,46 @@ def train():
     arg_parse = ArgumentParser()
     arg_parse.add_argument('--batch_size', type=int, default=default_parameters['batch_size'])
     arg_parse.add_argument('--epochs', type=int, default=default_parameters['epochs'])
+
     arg_parse.add_argument('--dictionary_size', type=int, default=default_parameters['dictionary_size'])
     arg_parse.add_argument('--max_headline_length', type=int, default=default_parameters['max_headline_length'])
 
+    arg_parse.add_argument('--fully_connected_dimensions', type=int)
+    arg_parse.add_argument('--fully_connected_activation', type=str)
+
+    arg_parse.add_argument('--optimizer', type=str)
+    arg_parse.add_argument('--loss', type=str)
     arguments = arg_parse.parse_args()
 
     glove = Glove(arguments.dictionary_size)
     glove.load_embedding()
 
-    model_builder = HeadlineModelBuilder() \
+    model_builder = Model1Builder() \
         .set_input('glove', glove) \
         .set_parameter('max_headline_length', arguments.max_headline_length)
 
+    for key in model_builder.default_parameters.keys():
+        if getattr(arguments, key):
+            model_builder.set_parameter(key, getattr(arguments, key))
+
     model = model_builder()
 
-    preprocessor = HeadlinePreprocessor(model, glove, arguments.max_headline_length)
-    preprocessor.load_data()
+    preprocessor = Preprocessor(model)
+    preprocessor.set_encoder('glove', glove)
+    preprocessor.set_parameter('max_headline_length', arguments.max_headline_length)
+
+    preprocessor.load_data(['headline', 'is_top_submission'])
+
+    training_input = [preprocessor.training_data['headline']]
+    validation_input = [preprocessor.validation_data['headline']]
+    training_output = [preprocessor.training_data['is_top_submission']]
+    validation_output = [preprocessor.validation_data['is_top_submission']]
+
+    class_weights = calculate_class_weights(preprocessor.training_data['is_top_submission'],
+                                            [ol.name for ol in model.output_layers])
 
     callbacks = CallbackBuilder(model, model_builder.default_parameters, arguments,
                                 [CsvLogger, CsvPlotter, ConfigLogger, ModelSaver])()
 
-    training_input = [preprocessor.training_data['headlines']]
-    training_output = [preprocessor.training_data['is_top_submission']]
-
-    validation_input = [preprocessor.validation_data['headlines']]
-    validation_output = [preprocessor.validation_data['is_top_submission']]
-
-    class_weights = preprocessor.training_data['class_weights']
-
     model.fit(training_input, training_output, batch_size=arguments.batch_size, epochs=arguments.epochs,
-              callbacks=callbacks,
-              validation_data=(validation_input, validation_output), class_weight=class_weights)
+              callbacks=callbacks, validation_data=(validation_input, validation_output), class_weight=class_weights)

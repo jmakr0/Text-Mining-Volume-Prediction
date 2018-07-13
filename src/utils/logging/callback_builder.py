@@ -21,7 +21,7 @@ class CallbackBuilder():
         self.active_callbacks = []
 
     def __call__(self):
-        timestamp = strftime("%Y-%m-%d %H:%M:%S", gmtime())
+        timestamp = strftime("%Y-%m-%d-%H-%M-%S", gmtime())
         settings = Settings()
         log_path = '{}/{}_{}'.format(settings.get_training_root_dir(), self.model.name, timestamp)
         os.makedirs(log_path, exist_ok=True)

@@ -20,10 +20,10 @@ class ModelBuilder:
     def check_required(self):
         for required_input in self.required_inputs:
             if required_input not in self.inputs:
-                raise MissingRequiredError
+                raise MissingRequiredError('Missing required input: {}'.format(required_input))
         for required_parameter in self.required_parameters:
             if required_parameter not in self.parameters:
-                raise MissingRequiredError
+                raise MissingRequiredError('Missing required parameter: {}'.format(required_parameter))
 
     def set_defaults(self):
         for default_input, value in self.default_inputs.items():
@@ -61,6 +61,10 @@ class ModelBuilder:
         return description
 
     def __call__(self):
+        raise NotImplementedError
+
+    @property
+    def model_identifier(self):
         raise NotImplementedError
 
 
