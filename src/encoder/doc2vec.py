@@ -1,6 +1,7 @@
 import os
 import random
 import logging
+from argparse import ArgumentParser
 
 from gensim.models import doc2vec
 from gensim.utils import simple_preprocess
@@ -26,7 +27,7 @@ class Doc2Vec:
             print('loading doc2vec model ...')
             self.model = doc2vec.Doc2Vec.load(doc2vec_file)
         else:
-            self._train_model(tag, dimensions)
+            self.train_model(tag, dimensions)
             print('saving model ...')
             try:
                 os.makedirs(doc2vec_dir)
@@ -34,9 +35,9 @@ class Doc2Vec:
                 pass
             self.model.save(doc2vec_file)
 
-    def _train_model(self, tag, dimensions):
+    def train_model(self, tag, dimensions):
         """
-        :param tag: Defines on which dataset to train. Choose either 'headline' or 'text'.
+        :param tag: Defines on which dataset to train. Choose either 'headline' or 'article'.
         :param dimensions:
         :return:
         """
@@ -72,3 +73,13 @@ class Doc2Vec:
 
     def get_vector(self, doc):
         return self.model.infer_vector(simple_preprocess(doc))
+
+
+def create_model():
+    arg_parse = ArgumentParser()
+    arg_parse.add_argument('--tag', type=str, required=True)
+    arg_parse.add_argument('--dimensions', type=int, required=True)
+    arguments = arg_parse.parse_args()
+
+    doc2vec = Doc2Vec()
+    doc2vec.train_model(arguments.tag, arguments.dimensions)
