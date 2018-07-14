@@ -77,5 +77,5 @@ def calculate_correlations():
     for model_name_1 in predictions.keys():
         for model_name_2 in predictions.keys():
             if model_name_1 != model_name_2:
-                correlation = np.correlate(predictions[model_name_1][:, -1], predictions[model_name_2][:, -1])[0]
-                print(model_name_1, model_name_2, correlation)
+                correlation = np.corrcoef(predictions[model_name_1][:, -1], predictions[model_name_2][:, -1])[0]
+                print(model_name_1, model_name_2, correlation[1])
