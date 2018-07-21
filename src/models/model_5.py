@@ -3,7 +3,6 @@ from argparse import ArgumentParser
 from keras import Input, Model
 from keras.layers import Dense, BatchNormalization, Embedding, Reshape, Concatenate
 
-from src.encoder.numeric_log import NumericLog
 from src.models.model_builder import ModelBuilder
 from src.models.preprocessor import Preprocessor
 from src.utils.calculate_class_weights import calculate_class_weights
@@ -16,15 +15,14 @@ from src.utils.logging.callbacks.model_saver import ModelSaver
 from src.utils.settings import Settings
 
 
-class Model8Builder(ModelBuilder):
+class Model5Builder(ModelBuilder):
     def __init__(self):
         super().__init__()
 
-        self.required_inputs.append('headline_numeric_log')
-        self.required_inputs.append('article_numeric_log')
-
-        self.default_parameters['headline_log_representation_embedding_dimensions'] = 5
-        self.default_parameters['article_log_representation_embedding_dimensions'] = 5
+        self.default_parameters['minute_embedding_dimensions'] = 2
+        self.default_parameters['hour_embedding_dimensions'] = 2
+        self.default_parameters['day_of_week_embedding_dimensions'] = 2
+        self.default_parameters['day_of_year_embedding_dimensions'] = 2
         self.default_parameters['fully_connected_dimensions'] = 128
         self.default_parameters['fully_connected_activation'] = 'tanh'
 
@@ -34,31 +32,33 @@ class Model8Builder(ModelBuilder):
     def __call__(self):
         super().prepare_building()
 
-        headline_numeric_log = self.inputs['headline_numeric_log']
-        article_numeric_log = self.inputs['article_numeric_log']
+        minute_input = Input(shape=(1,), name='minute_input')
+        minute_embedding = Embedding(60, self.parameters['minute_embedding_dimensions'])(minute_input)
+        minute_reshape = Reshape((self.parameters['minute_embedding_dimensions'],))(minute_embedding)
 
-        headline_numeric_log_input = Input(shape=(1,), name='headline_log_representation_input')
-        headline_numeric_log_embedding = Embedding(headline_numeric_log.max_log_value() + 1,
-                                                   self.parameters['headline_log_representation_embedding_dimensions'])(
-            headline_numeric_log_input)
-        headline_numeric_log_reshape = Reshape((self.parameters['headline_log_representation_embedding_dimensions'],))(
-            headline_numeric_log_embedding)
+        hour_input = Input(shape=(1,), name='hour_input')
+        hour_embedding = Embedding(24, self.parameters['hour_embedding_dimensions'])(hour_input)
+        hour_reshape = Reshape((self.parameters['hour_embedding_dimensions'],))(hour_embedding)
 
-        article_numeric_log_input = Input(shape=(1,), name='article_numeric_log_input')
-        article_numeric_log_embedding = Embedding(article_numeric_log.max_log_value() + 1,
-                                                  self.parameters['article_log_representation_embedding_dimensions'])(
-            article_numeric_log_input)
-        article_numeric_log_reshape = Reshape((self.parameters['article_log_representation_embedding_dimensions'],))(
-            article_numeric_log_embedding)
+        day_of_week_input = Input(shape=(1,), name='day_of_week_input')
+        day_of_week_embedding = Embedding(7, self.parameters['day_of_week_embedding_dimensions'])(day_of_week_input)
+        day_of_week_reshape = Reshape((self.parameters['day_of_week_embedding_dimensions'],))(day_of_week_embedding)
 
-        concat = Concatenate()([headline_numeric_log_reshape, article_numeric_log_reshape])
+        day_of_year_input = Input(shape=(1,), name='day_of_year_input')
+        day_of_year_embedding = Embedding(366, self.parameters['day_of_year_embedding_dimensions'])(day_of_year_input)
+        day_of_year_reshape = Reshape((self.parameters['day_of_year_embedding_dimensions'],))(day_of_year_embedding)
+
+        concat = Concatenate()([hour_reshape,
+                                minute_reshape,
+                                day_of_week_reshape,
+                                day_of_year_reshape])
+
         fully_connected = Dense(self.parameters['fully_connected_dimensions'],
                                 activation=self.parameters['fully_connected_activation'])(concat)
         batch_normalization = BatchNormalization()(fully_connected)
         main_output = Dense(1, activation='sigmoid', name='output')(batch_normalization)
 
-        model = Model(inputs=[headline_numeric_log_input, article_numeric_log_input],
-                      outputs=[main_output],
+        model = Model(inputs=[minute_input, hour_input, day_of_week_input, day_of_year_input], outputs=[main_output],
                       name=self.model_identifier)
 
         model.compile(loss=self.parameters['loss'],
@@ -69,7 +69,7 @@ class Model8Builder(ModelBuilder):
 
     @property
     def model_identifier(self):
-        return 'model_8'
+        return 'model_5'
 
 
 def train():
@@ -80,11 +80,10 @@ def train():
     arg_parse.add_argument('--batch_size', type=int, default=default_parameters['batch_size'])
     arg_parse.add_argument('--epochs', type=int, default=default_parameters['epochs'])
 
-    arg_parse.add_argument('--max_headline_length', type=int, default=default_parameters['max_headline_length'])
-    arg_parse.add_argument('--max_article_length', type=int, default=default_parameters['max_article_length'])
-
-    arg_parse.add_argument('--headline_log_representation_embedding_dimensions', type=int)
-    arg_parse.add_argument('--article_log_representation_embedding_dimensions', type=int)
+    arg_parse.add_argument('--minute_embedding_dimensions', type=int)
+    arg_parse.add_argument('--hour_embedding_dimensions', type=int)
+    arg_parse.add_argument('--day_of_week_embedding_dimensions', type=int)
+    arg_parse.add_argument('--day_of_year_embedding_dimensions', type=int)
     arg_parse.add_argument('--fully_connected_dimensions', type=int)
     arg_parse.add_argument('--fully_connected_activation', type=str)
 
@@ -92,12 +91,7 @@ def train():
     arg_parse.add_argument('--loss', type=str)
     arguments = arg_parse.parse_args()
 
-    headline_numeric_log = NumericLog(arguments.max_headline_length)
-    article_numeric_log = NumericLog(arguments.max_article_length)
-
-    model_builder = Model8Builder() \
-        .set_input('headline_numeric_log', headline_numeric_log) \
-        .set_input('article_numeric_log', article_numeric_log)
+    model_builder = Model5Builder()
 
     for key in model_builder.default_parameters.keys():
         if hasattr(arguments, key) and getattr(arguments, key):
@@ -106,14 +100,17 @@ def train():
     model = model_builder()
 
     preprocessor = Preprocessor(model)
-    preprocessor.set_encoder('headline_numeric_log', headline_numeric_log)
-    preprocessor.set_encoder('article_numeric_log', article_numeric_log)
 
-    preprocessor.load_data(['headline_log_representation', 'article_log_representation', 'is_top_submission'])
-    training_input = [preprocessor.training_data['headline_log_representation'],
-                      preprocessor.training_data['article_log_representation']]
-    validation_input = [preprocessor.validation_data['headline_log_representation'],
-                        preprocessor.validation_data['article_log_representation']]
+    preprocessor.load_data(['minute', 'hour', 'day_of_week', 'day_of_year', 'is_top_submission'])
+
+    training_input = [preprocessor.training_data['minute'],
+                      preprocessor.training_data['hour'],
+                      preprocessor.training_data['day_of_week'],
+                      preprocessor.training_data['day_of_year']]
+    validation_input = [preprocessor.validation_data['minute'],
+                        preprocessor.validation_data['hour'],
+                        preprocessor.validation_data['day_of_week'],
+                        preprocessor.validation_data['day_of_year']]
     training_output = [preprocessor.training_data['is_top_submission']]
     validation_output = [preprocessor.validation_data['is_top_submission']]
 

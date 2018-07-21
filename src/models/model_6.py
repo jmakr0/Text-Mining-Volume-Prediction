@@ -1,8 +1,9 @@
 from argparse import ArgumentParser
 
 from keras import Input, Model
-from keras.layers import Dense, BatchNormalization, Embedding, Reshape
+from keras.layers import Dense, BatchNormalization, Embedding, Reshape, Concatenate
 
+from src.encoder.numeric_log import NumericLog
 from src.models.model_builder import ModelBuilder
 from src.models.preprocessor import Preprocessor
 from src.utils.calculate_class_weights import calculate_class_weights
@@ -19,7 +20,11 @@ class Model6Builder(ModelBuilder):
     def __init__(self):
         super().__init__()
 
-        self.default_parameters['category_embedding_dimensions'] = 5
+        self.required_inputs.append('headline_numeric_log')
+        self.required_inputs.append('article_numeric_log')
+
+        self.default_parameters['headline_log_representation_embedding_dimensions'] = 5
+        self.default_parameters['article_log_representation_embedding_dimensions'] = 5
         self.default_parameters['fully_connected_dimensions'] = 128
         self.default_parameters['fully_connected_activation'] = 'tanh'
 
@@ -29,16 +34,32 @@ class Model6Builder(ModelBuilder):
     def __call__(self):
         super().prepare_building()
 
-        category_input = Input(shape=(1,), name='category_input')
-        category_embedding = Embedding(81, self.parameters['category_embedding_dimensions'])(category_input)
-        category_reshape = Reshape((self.parameters['category_embedding_dimensions'],))(category_embedding)
+        headline_numeric_log = self.inputs['headline_numeric_log']
+        article_numeric_log = self.inputs['article_numeric_log']
 
+        headline_numeric_log_input = Input(shape=(1,), name='headline_log_representation_input')
+        headline_numeric_log_embedding = Embedding(headline_numeric_log.max_log_value() + 1,
+                                                   self.parameters['headline_log_representation_embedding_dimensions'])(
+            headline_numeric_log_input)
+        headline_numeric_log_reshape = Reshape((self.parameters['headline_log_representation_embedding_dimensions'],))(
+            headline_numeric_log_embedding)
+
+        article_numeric_log_input = Input(shape=(1,), name='article_numeric_log_input')
+        article_numeric_log_embedding = Embedding(article_numeric_log.max_log_value() + 1,
+                                                  self.parameters['article_log_representation_embedding_dimensions'])(
+            article_numeric_log_input)
+        article_numeric_log_reshape = Reshape((self.parameters['article_log_representation_embedding_dimensions'],))(
+            article_numeric_log_embedding)
+
+        concat = Concatenate()([headline_numeric_log_reshape, article_numeric_log_reshape])
         fully_connected = Dense(self.parameters['fully_connected_dimensions'],
-                                activation=self.parameters['fully_connected_activation'])(category_reshape)
+                                activation=self.parameters['fully_connected_activation'])(concat)
         batch_normalization = BatchNormalization()(fully_connected)
         main_output = Dense(1, activation='sigmoid', name='output')(batch_normalization)
 
-        model = Model(inputs=[category_input], outputs=[main_output], name=self.model_identifier)
+        model = Model(inputs=[headline_numeric_log_input, article_numeric_log_input],
+                      outputs=[main_output],
+                      name=self.model_identifier)
 
         model.compile(loss=self.parameters['loss'],
                       optimizer=self.parameters['optimizer'],
@@ -59,7 +80,11 @@ def train():
     arg_parse.add_argument('--batch_size', type=int, default=default_parameters['batch_size'])
     arg_parse.add_argument('--epochs', type=int, default=default_parameters['epochs'])
 
-    arg_parse.add_argument('--category_embedding_dimensions', type=int)
+    arg_parse.add_argument('--max_headline_length', type=int, default=default_parameters['max_headline_length'])
+    arg_parse.add_argument('--max_article_length', type=int, default=default_parameters['max_article_length'])
+
+    arg_parse.add_argument('--headline_log_representation_embedding_dimensions', type=int)
+    arg_parse.add_argument('--article_log_representation_embedding_dimensions', type=int)
     arg_parse.add_argument('--fully_connected_dimensions', type=int)
     arg_parse.add_argument('--fully_connected_activation', type=str)
 
@@ -67,7 +92,12 @@ def train():
     arg_parse.add_argument('--loss', type=str)
     arguments = arg_parse.parse_args()
 
-    model_builder = Model6Builder()
+    headline_numeric_log = NumericLog(arguments.max_headline_length)
+    article_numeric_log = NumericLog(arguments.max_article_length)
+
+    model_builder = Model6Builder() \
+        .set_input('headline_numeric_log', headline_numeric_log) \
+        .set_input('article_numeric_log', article_numeric_log)
 
     for key in model_builder.default_parameters.keys():
         if hasattr(arguments, key) and getattr(arguments, key):
@@ -76,11 +106,14 @@ def train():
     model = model_builder()
 
     preprocessor = Preprocessor(model)
+    preprocessor.set_encoder('headline_numeric_log', headline_numeric_log)
+    preprocessor.set_encoder('article_numeric_log', article_numeric_log)
 
-    preprocessor.load_data(['category', 'is_top_submission'])
-
-    training_input = [preprocessor.training_data['category']]
-    validation_input = [preprocessor.validation_data['category']]
+    preprocessor.load_data(['headline_log_representation', 'article_log_representation', 'is_top_submission'])
+    training_input = [preprocessor.training_data['headline_log_representation'],
+                      preprocessor.training_data['article_log_representation']]
+    validation_input = [preprocessor.validation_data['headline_log_representation'],
+                        preprocessor.validation_data['article_log_representation']]
     training_output = [preprocessor.training_data['is_top_submission']]
     validation_output = [preprocessor.validation_data['is_top_submission']]
 

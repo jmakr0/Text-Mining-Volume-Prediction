@@ -5,6 +5,7 @@ from keras.layers import Embedding, Dense, Conv1D, GlobalMaxPooling1D, \
     Concatenate, Reshape, BatchNormalization
 
 from src.encoder.glove import Glove
+from src.encoder.numeric_log import NumericLog
 from src.models.model_builder import ModelBuilder
 from src.models.preprocessor import Preprocessor
 from src.utils.calculate_class_weights import calculate_class_weights
@@ -28,8 +29,9 @@ class Model26Builder(ModelBuilder):
         self.default_parameters['filter_count_3'] = 5
         self.default_parameters['filter_count_1'] = 5
 
-        self.default_parameters['category_embedding_dimensions'] = 5
-        self.default_parameters['fully_connected_dimensions'] = 64
+        self.default_parameters['headline_log_representation_embedding_dimensions'] = 5
+        self.default_parameters['article_log_representation_embedding_dimensions'] = 5
+        self.default_parameters['fully_connected_dimensions'] = 128
         self.default_parameters['fully_connected_activation'] = 'tanh'
 
         self.default_parameters['optimizer'] = 'adam'
@@ -39,6 +41,9 @@ class Model26Builder(ModelBuilder):
         super().prepare_building()
 
         glove = self.inputs['glove']
+        headline_numeric_log = self.inputs['headline_numeric_log']
+        article_numeric_log = self.inputs['article_numeric_log']
+
         headline_input = Input(shape=(self.parameters['max_headline_length'],), name='headline_input')
         headline_embedding = Embedding(glove.embedding_vectors.shape[0],
                                        glove.embedding_vectors.shape[1],
@@ -51,17 +56,34 @@ class Model26Builder(ModelBuilder):
         convolution_1 = Conv1D(self.parameters['filter_count_1'], kernel_size=1)(headline_embedding)
         convolution_1_max = GlobalMaxPooling1D()(convolution_1)
 
-        category_input = Input(shape=(1,), name='category_input')
-        category_embedding = Embedding(81, self.parameters['category_embedding_dimensions'])(category_input)
-        category_reshape = Reshape((self.parameters['category_embedding_dimensions'],))(category_embedding)
+        headline_numeric_log_input = Input(shape=(1,), name='headline_log_representation_input')
+        headline_numeric_log_embedding = Embedding(headline_numeric_log.max_log_value() + 1,
+                                                   self.parameters['headline_log_representation_embedding_dimensions'])(
+            headline_numeric_log_input)
+        headline_numeric_log_reshape = Reshape((self.parameters['headline_log_representation_embedding_dimensions'],))(
+            headline_numeric_log_embedding)
+
+        article_numeric_log_input = Input(shape=(1,), name='article_numeric_log_input')
+        article_numeric_log_embedding = Embedding(article_numeric_log.max_log_value() + 1,
+                                                  self.parameters['article_log_representation_embedding_dimensions'])(
+            article_numeric_log_input)
+        article_numeric_log_reshape = Reshape((self.parameters['article_log_representation_embedding_dimensions'],))(
+            article_numeric_log_embedding)
+
+        log_concat = Concatenate()([headline_numeric_log_reshape, article_numeric_log_reshape])
         fully_connected = Dense(self.parameters['fully_connected_dimensions'],
-                                activation=self.parameters['fully_connected_activation'])(category_reshape)
+                                activation=self.parameters['fully_connected_activation'])(log_concat)
         batch_normalization = BatchNormalization()(fully_connected)
 
-        concat = Concatenate()([convolution_5_max, convolution_3_max, convolution_1_max, batch_normalization])
+        concat = Concatenate()([convolution_5_max,
+                                convolution_3_max,
+                                convolution_1_max,
+                                batch_normalization])
         main_output = Dense(1, activation='sigmoid', name='output')(concat)
 
-        model = Model(inputs=[headline_input, category_input], outputs=[main_output], name=self.model_identifier)
+        model = Model(inputs=[headline_input, headline_numeric_log_input, article_numeric_log_input],
+                      outputs=[main_output],
+                      name=self.model_identifier)
 
         model.compile(loss=self.parameters['loss'],
                       optimizer=self.parameters['optimizer'],
@@ -84,12 +106,14 @@ def train():
 
     arg_parse.add_argument('--dictionary_size', type=int, default=default_parameters['dictionary_size'])
     arg_parse.add_argument('--max_headline_length', type=int, default=default_parameters['max_headline_length'])
+    arg_parse.add_argument('--max_article_length', type=int, default=default_parameters['max_article_length'])
 
     arg_parse.add_argument('--filter_count_5', type=int)
     arg_parse.add_argument('--filter_count_3', type=int)
     arg_parse.add_argument('--filter_count_1', type=int)
 
-    arg_parse.add_argument('--category_embedding_dimensions', type=int)
+    arg_parse.add_argument('--headline_log_representation_embedding_dimensions', type=int)
+    arg_parse.add_argument('--article_log_representation_embedding_dimensions', type=int)
     arg_parse.add_argument('--fully_connected_dimensions', type=int)
     arg_parse.add_argument('--fully_connected_activation', type=str)
 
@@ -100,9 +124,14 @@ def train():
     glove = Glove(arguments.dictionary_size)
     glove.load_embedding()
 
+    headline_numeric_log = NumericLog(arguments.max_headline_length)
+    article_numeric_log = NumericLog(arguments.max_article_length)
+
     model_builder = Model26Builder() \
         .set_input('glove', glove) \
-        .set_parameter('max_headline_length', arguments.max_headline_length)
+        .set_parameter('max_headline_length', arguments.max_headline_length) \
+        .set_input('headline_numeric_log', headline_numeric_log) \
+        .set_input('article_numeric_log', article_numeric_log)
 
     for key in model_builder.default_parameters.keys():
         if getattr(arguments, key):
@@ -113,11 +142,18 @@ def train():
     preprocessor = Preprocessor(model)
     preprocessor.set_encoder('glove', glove)
     preprocessor.set_parameter('max_headline_length', arguments.max_headline_length)
+    preprocessor.set_encoder('headline_numeric_log', headline_numeric_log)
+    preprocessor.set_encoder('article_numeric_log', article_numeric_log)
 
-    preprocessor.load_data(['headline', 'category', 'is_top_submission'])
+    preprocessor.load_data(['headline',
+                            'headline_log_representation',
+                            'article_log_representation',
+                            'is_top_submission'])
 
-    training_input = [preprocessor.training_data[key] for key in ['headline', 'category']]
-    validation_input = [preprocessor.validation_data[key] for key in['headline', 'category']]
+    training_input = [preprocessor.training_data[key] for key in
+                      ['headline', 'headline_log_representation', 'article_log_representation']]
+    validation_input = [preprocessor.validation_data[key] for key in
+                        ['headline', 'headline_log_representation', 'article_log_representation']]
     training_output = [preprocessor.training_data['is_top_submission']]
     validation_output = [preprocessor.validation_data['is_top_submission']]
 

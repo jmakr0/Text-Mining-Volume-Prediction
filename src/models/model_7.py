@@ -3,6 +3,7 @@ from argparse import ArgumentParser
 from keras import Input, Model
 from keras.layers import Dense, BatchNormalization, Embedding, Reshape, Concatenate
 
+from src.encoder.numeric_log import NumericLog
 from src.models.model_builder import ModelBuilder
 from src.models.preprocessor import Preprocessor
 from src.utils.calculate_class_weights import calculate_class_weights
@@ -19,11 +20,7 @@ class Model7Builder(ModelBuilder):
     def __init__(self):
         super().__init__()
 
-        self.default_parameters['minute_embedding_dimensions'] = 2
-        self.default_parameters['hour_embedding_dimensions'] = 2
-        self.default_parameters['day_of_week_embedding_dimensions'] = 2
-        self.default_parameters['day_of_year_embedding_dimensions'] = 2
-        self.default_parameters['fully_connected_dimensions'] = 128
+        self.default_parameters['fully_connected_dimensions'] = 32
         self.default_parameters['fully_connected_activation'] = 'tanh'
 
         self.default_parameters['optimizer'] = 'adam'
@@ -32,33 +29,15 @@ class Model7Builder(ModelBuilder):
     def __call__(self):
         super().prepare_building()
 
-        minute_input = Input(shape=(1,), name='minute_input')
-        minute_embedding = Embedding(60, self.parameters['minute_embedding_dimensions'])(minute_input)
-        minute_reshape = Reshape((self.parameters['minute_embedding_dimensions'],))(minute_embedding)
-
-        hour_input = Input(shape=(1,), name='hour_input')
-        hour_embedding = Embedding(24, self.parameters['hour_embedding_dimensions'])(hour_input)
-        hour_reshape = Reshape((self.parameters['hour_embedding_dimensions'],))(hour_embedding)
-
-        day_of_week_input = Input(shape=(1,), name='day_of_week_input')
-        day_of_week_embedding = Embedding(7, self.parameters['day_of_week_embedding_dimensions'])(day_of_week_input)
-        day_of_week_reshape = Reshape((self.parameters['day_of_week_embedding_dimensions'],))(day_of_week_embedding)
-
-        day_of_year_input = Input(shape=(1,), name='day_of_year_input')
-        day_of_year_embedding = Embedding(366, self.parameters['day_of_year_embedding_dimensions'])(day_of_year_input)
-        day_of_year_reshape = Reshape((self.parameters['day_of_year_embedding_dimensions'],))(day_of_year_embedding)
-
-        concat = Concatenate()([hour_reshape,
-                                minute_reshape,
-                                day_of_week_reshape,
-                                day_of_year_reshape])
-
+        competitive_score_input = Input(shape=(1,), name='competitive_score_input')
+        competitive_score_sigmoid = Dense(1, activation='sigmoid')(competitive_score_input)
         fully_connected = Dense(self.parameters['fully_connected_dimensions'],
-                                activation=self.parameters['fully_connected_activation'])(concat)
+                                activation=self.parameters['fully_connected_activation'])(competitive_score_sigmoid)
         batch_normalization = BatchNormalization()(fully_connected)
         main_output = Dense(1, activation='sigmoid', name='output')(batch_normalization)
 
-        model = Model(inputs=[minute_input, hour_input, day_of_week_input, day_of_year_input], outputs=[main_output],
+        model = Model(inputs=[competitive_score_input],
+                      outputs=[main_output],
                       name=self.model_identifier)
 
         model.compile(loss=self.parameters['loss'],
@@ -80,10 +59,6 @@ def train():
     arg_parse.add_argument('--batch_size', type=int, default=default_parameters['batch_size'])
     arg_parse.add_argument('--epochs', type=int, default=default_parameters['epochs'])
 
-    arg_parse.add_argument('--minute_embedding_dimensions', type=int)
-    arg_parse.add_argument('--hour_embedding_dimensions', type=int)
-    arg_parse.add_argument('--day_of_week_embedding_dimensions', type=int)
-    arg_parse.add_argument('--day_of_year_embedding_dimensions', type=int)
     arg_parse.add_argument('--fully_connected_dimensions', type=int)
     arg_parse.add_argument('--fully_connected_activation', type=str)
 
@@ -101,16 +76,9 @@ def train():
 
     preprocessor = Preprocessor(model)
 
-    preprocessor.load_data(['minute', 'hour', 'day_of_week', 'day_of_year', 'is_top_submission'])
-
-    training_input = [preprocessor.training_data['minute'],
-                      preprocessor.training_data['hour'],
-                      preprocessor.training_data['day_of_week'],
-                      preprocessor.training_data['day_of_year']]
-    validation_input = [preprocessor.validation_data['minute'],
-                        preprocessor.validation_data['hour'],
-                        preprocessor.validation_data['day_of_week'],
-                        preprocessor.validation_data['day_of_year']]
+    preprocessor.load_data(['competitive_score', 'is_top_submission'])
+    training_input = [preprocessor.training_data['competitive_score']]
+    validation_input = [preprocessor.validation_data['competitive_score']]
     training_output = [preprocessor.training_data['is_top_submission']]
     validation_output = [preprocessor.validation_data['is_top_submission']]
 
