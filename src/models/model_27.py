@@ -24,18 +24,8 @@ class Model27Builder(ModelBuilder):
         self.required_inputs.append('glove')
         self.required_parameters.append('max_headline_length')
 
-        self.default_parameters['filter_count_5'] = 5
-        self.default_parameters['filter_count_3'] = 5
-        self.default_parameters['filter_count_1'] = 5
-
-        self.default_parameters['fully_connected_dimensions'] = 32
-        self.default_parameters['fully_connected_activation'] = 'tanh'
-
-        self.default_parameters['optimizer'] = 'adam'
-        self.default_parameters['loss'] = 'binary_crossentropy'
-
     def __call__(self):
-        super().prepare_building()
+        super().check_required()
 
         glove = self.inputs['glove']
         headline_input = Input(shape=(self.parameters['max_headline_length'],), name='headline_input')
@@ -76,42 +66,24 @@ class Model27Builder(ModelBuilder):
 
 def train():
     settings = Settings()
-    default_parameters = settings.get_training_parameter_default()
 
-    arg_parse = ArgumentParser()
-    arg_parse.add_argument('--batch_size', type=int, default=default_parameters['batch_size'])
-    arg_parse.add_argument('--epochs', type=int, default=default_parameters['epochs'])
+    batch_size = settings.get_training_parameters('batch_size')
+    epochs = settings.get_training_parameters('epochs')
+    dictionary_size = settings.get_training_parameters('dictionary_size')
+    max_headline_length = settings.get_training_parameters('max_headline_length')
 
-    arg_parse.add_argument('--dictionary_size', type=int, default=default_parameters['dictionary_size'])
-    arg_parse.add_argument('--max_headline_length', type=int, default=default_parameters['max_headline_length'])
-
-    arg_parse.add_argument('--filter_count_5', type=int)
-    arg_parse.add_argument('--filter_count_3', type=int)
-    arg_parse.add_argument('--filter_count_1', type=int)
-
-    arg_parse.add_argument('--fully_connected_dimensions', type=int)
-    arg_parse.add_argument('--fully_connected_activation', type=str)
-
-    arg_parse.add_argument('--optimizer', type=str)
-    arg_parse.add_argument('--loss', type=str)
-    arguments = arg_parse.parse_args()
-
-    glove = Glove(arguments.dictionary_size)
+    glove = Glove(dictionary_size)
     glove.load_embedding()
 
     model_builder = Model27Builder() \
         .set_input('glove', glove) \
-        .set_parameter('max_headline_length', arguments.max_headline_length)
-
-    for key in model_builder.default_parameters.keys():
-        if getattr(arguments, key):
-            model_builder.set_parameter(key, getattr(arguments, key))
+        .set_parameter('max_headline_length', max_headline_length)
 
     model = model_builder()
 
     preprocessor = Preprocessor(model)
     preprocessor.set_encoder('glove', glove)
-    preprocessor.set_parameter('max_headline_length', arguments.max_headline_length)
+    preprocessor.set_parameter('max_headline_length', max_headline_length)
 
     preprocessor.load_data(['headline', 'competitive_score', 'is_top_submission'])
 
@@ -123,8 +95,7 @@ def train():
     class_weights = calculate_class_weights(preprocessor.training_data['is_top_submission'],
                                             [ol.name for ol in model.output_layers])
 
-    callbacks = CallbackBuilder(model, model_builder.default_parameters, arguments,
-                                [CsvLogger, CsvPlotter, ConfigLogger, ModelSaver])()
+    callbacks = CallbackBuilder(model, [CsvLogger, CsvPlotter, ConfigLogger, ModelSaver])()
 
-    model.fit(training_input, training_output, batch_size=arguments.batch_size, epochs=arguments.epochs,
+    model.fit(training_input, training_output, batch_size=batch_size, epochs=epochs,
               callbacks=callbacks, validation_data=(validation_input, validation_output), class_weight=class_weights)

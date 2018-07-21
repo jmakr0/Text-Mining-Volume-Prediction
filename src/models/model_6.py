@@ -23,16 +23,8 @@ class Model6Builder(ModelBuilder):
         self.required_inputs.append('headline_numeric_log')
         self.required_inputs.append('article_numeric_log')
 
-        self.default_parameters['headline_log_representation_embedding_dimensions'] = 5
-        self.default_parameters['article_log_representation_embedding_dimensions'] = 5
-        self.default_parameters['fully_connected_dimensions'] = 128
-        self.default_parameters['fully_connected_activation'] = 'tanh'
-
-        self.default_parameters['optimizer'] = 'adam'
-        self.default_parameters['loss'] = 'binary_crossentropy'
-
     def __call__(self):
-        super().prepare_building()
+        super().check_required()
 
         headline_numeric_log = self.inputs['headline_numeric_log']
         article_numeric_log = self.inputs['article_numeric_log']
@@ -74,34 +66,18 @@ class Model6Builder(ModelBuilder):
 
 def train():
     settings = Settings()
-    default_parameters = settings.get_training_parameter_default()
 
-    arg_parse = ArgumentParser()
-    arg_parse.add_argument('--batch_size', type=int, default=default_parameters['batch_size'])
-    arg_parse.add_argument('--epochs', type=int, default=default_parameters['epochs'])
+    batch_size = settings.get_training_parameters('batch_size')
+    epochs = settings.get_training_parameters('epochs')
+    max_headline_length = settings.get_training_parameters('max_headline_length')
+    max_article_length = settings.get_training_parameters('max_article_length')
 
-    arg_parse.add_argument('--max_headline_length', type=int, default=default_parameters['max_headline_length'])
-    arg_parse.add_argument('--max_article_length', type=int, default=default_parameters['max_article_length'])
-
-    arg_parse.add_argument('--headline_log_representation_embedding_dimensions', type=int)
-    arg_parse.add_argument('--article_log_representation_embedding_dimensions', type=int)
-    arg_parse.add_argument('--fully_connected_dimensions', type=int)
-    arg_parse.add_argument('--fully_connected_activation', type=str)
-
-    arg_parse.add_argument('--optimizer', type=str)
-    arg_parse.add_argument('--loss', type=str)
-    arguments = arg_parse.parse_args()
-
-    headline_numeric_log = NumericLog(arguments.max_headline_length)
-    article_numeric_log = NumericLog(arguments.max_article_length)
+    headline_numeric_log = NumericLog(max_headline_length)
+    article_numeric_log = NumericLog(max_article_length)
 
     model_builder = Model6Builder() \
         .set_input('headline_numeric_log', headline_numeric_log) \
         .set_input('article_numeric_log', article_numeric_log)
-
-    for key in model_builder.default_parameters.keys():
-        if hasattr(arguments, key) and getattr(arguments, key):
-            model_builder.set_parameter(key, getattr(arguments, key))
 
     model = model_builder()
 
@@ -120,8 +96,7 @@ def train():
     class_weights = calculate_class_weights(preprocessor.training_data['is_top_submission'],
                                             [ol.name for ol in model.output_layers])
 
-    callbacks = CallbackBuilder(model, model_builder.default_parameters, arguments,
-                                [CsvLogger, CsvPlotter, ConfigLogger, ModelSaver])()
+    callbacks = CallbackBuilder(model, [CsvLogger, CsvPlotter, ConfigLogger, ModelSaver])()
 
-    model.fit(training_input, training_output, batch_size=arguments.batch_size, epochs=arguments.epochs,
+    model.fit(training_input, training_output, batch_size=batch_size, epochs=epochs,
               callbacks=callbacks, validation_data=(validation_input, validation_output), class_weight=class_weights)

@@ -17,17 +17,8 @@ from src.utils.settings import Settings
 
 
 class Model7Builder(ModelBuilder):
-    def __init__(self):
-        super().__init__()
-
-        self.default_parameters['fully_connected_dimensions'] = 32
-        self.default_parameters['fully_connected_activation'] = 'tanh'
-
-        self.default_parameters['optimizer'] = 'adam'
-        self.default_parameters['loss'] = 'binary_crossentropy'
-
     def __call__(self):
-        super().prepare_building()
+        super().check_required()
 
         competitive_score_input = Input(shape=(1,), name='competitive_score_input')
         competitive_score_sigmoid = Dense(1, activation='sigmoid')(competitive_score_input)
@@ -53,24 +44,11 @@ class Model7Builder(ModelBuilder):
 
 def train():
     settings = Settings()
-    default_parameters = settings.get_training_parameter_default()
 
-    arg_parse = ArgumentParser()
-    arg_parse.add_argument('--batch_size', type=int, default=default_parameters['batch_size'])
-    arg_parse.add_argument('--epochs', type=int, default=default_parameters['epochs'])
-
-    arg_parse.add_argument('--fully_connected_dimensions', type=int)
-    arg_parse.add_argument('--fully_connected_activation', type=str)
-
-    arg_parse.add_argument('--optimizer', type=str)
-    arg_parse.add_argument('--loss', type=str)
-    arguments = arg_parse.parse_args()
+    batch_size = settings.get_training_parameters('batch_size')
+    epochs = settings.get_training_parameters('epochs')
 
     model_builder = Model7Builder()
-
-    for key in model_builder.default_parameters.keys():
-        if hasattr(arguments, key) and getattr(arguments, key):
-            model_builder.set_parameter(key, getattr(arguments, key))
 
     model = model_builder()
 
@@ -85,8 +63,7 @@ def train():
     class_weights = calculate_class_weights(preprocessor.training_data['is_top_submission'],
                                             [ol.name for ol in model.output_layers])
 
-    callbacks = CallbackBuilder(model, model_builder.default_parameters, arguments,
-                                [CsvLogger, CsvPlotter, ConfigLogger, ModelSaver])()
+    callbacks = CallbackBuilder(model, [CsvLogger, CsvPlotter, ConfigLogger, ModelSaver])()
 
-    model.fit(training_input, training_output, batch_size=arguments.batch_size, epochs=arguments.epochs,
+    model.fit(training_input, training_output, batch_size=batch_size, epochs=epochs,
               callbacks=callbacks, validation_data=(validation_input, validation_output), class_weight=class_weights)

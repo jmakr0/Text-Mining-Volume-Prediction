@@ -14,15 +14,15 @@ def calculate_correlations():
     arg_parse = ArgumentParser()
     arg_parse.add_argument('--model_1', type=str)
     arg_parse.add_argument('--model_2', type=str)
+    arg_parse.add_argument('--model_3', type=str)
     arg_parse.add_argument('--model_4', type=str)
+    arg_parse.add_argument('--model_5', type=str)
     arg_parse.add_argument('--model_6', type=str)
     arg_parse.add_argument('--model_7', type=str)
-    arg_parse.add_argument('--model_8', type=str)
-    arg_parse.add_argument('--model_9', type=str)
     arguments = arg_parse.parse_args()
 
     settings = Settings()
-    default_parameters = settings.get_training_parameter_default()
+    default_parameters = settings.get_training_parameters()
 
     glove = Glove(default_parameters['dictionary_size'])
     glove.load_embedding()
@@ -59,12 +59,12 @@ def calculate_correlations():
     model_inputs = {}
     model_inputs['model_1'] = [preprocessor.test_data['headline']]
     model_inputs['model_2'] = [preprocessor.test_data['headline']]
-    model_inputs['model_4'] = [preprocessor.test_data['body_begin']]
-    model_inputs['model_6'] = [preprocessor.test_data['category']]
-    model_inputs['model_7'] = [preprocessor.test_data[key] for key in ['minute', 'hour', 'day_of_week', 'day_of_year']]
-    model_inputs['model_8'] = [preprocessor.test_data[key] for key in
+    model_inputs['model_3'] = [preprocessor.test_data['body_begin']]
+    model_inputs['model_4'] = [preprocessor.test_data['category']]
+    model_inputs['model_5'] = [preprocessor.test_data[key] for key in ['minute', 'hour', 'day_of_week', 'day_of_year']]
+    model_inputs['model_6'] = [preprocessor.test_data[key] for key in
                                ['headline_log_representation', 'article_log_representation']]
-    model_inputs['model_9'] = [preprocessor.test_data['competitive_score']]
+    model_inputs['model_7'] = [preprocessor.test_data['competitive_score']]
 
     print('predict...')
     predictions = {}
