@@ -26,14 +26,12 @@ class Settings:
     def get_training_root_dir(self):
         return self.config.get('training_results')['root_dir']
 
-    def get_training_parameter_default(self, parameter_name=None):
-        if parameter_name is None:
-            return self.config.get('training_parameters')['default']
-        else:
-            return self.config.get('training_parameters')['default'][parameter_name]
+    def get_training_parameters(self, name=None):
+        if name == None:
+            return self.config.get('training_parameters')
+        return self.config.get('training_parameters')[name]
 
-    def get_training_parameter_choices(self, parameter_name=None):
-        if parameter_name is None:
-            return self.config.get('training_parameters')['choices']
-        else:
-            return self.config.get('training_parameters')['choices'][parameter_name]
+    def get_network_parameters(self, name=None):
+        if name == None:
+            return self.config.get('network_parameters')
+        return self.config.get('network_parameters')[name]

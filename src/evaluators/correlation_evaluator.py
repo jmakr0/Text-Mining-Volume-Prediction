@@ -22,7 +22,7 @@ def calculate_correlations():
     arguments = arg_parse.parse_args()
 
     settings = Settings()
-    default_parameters = settings.get_training_parameter_default()
+    default_parameters = settings.get_training_parameters()
 
     glove = Glove(default_parameters['dictionary_size'])
     glove.load_embedding()

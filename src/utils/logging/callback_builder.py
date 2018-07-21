@@ -10,12 +10,10 @@ from src.utils.settings import Settings
 
 class CallbackBuilder():
 
-    def __init__(self, model, default_parameters, hyper_parameters, callback_classes):
+    def __init__(self, model, callback_classes):
         super().__init__()
 
         self.model = model
-        self.default_parameters = default_parameters
-        self.hyper_parameters = hyper_parameters
         self.callback_classes = callback_classes
 
         self.active_callbacks = []
@@ -37,7 +35,7 @@ class CallbackBuilder():
             self.active_callbacks.append(plotter)
 
         if ConfigLogger in self.callback_classes:
-            config_logger = ConfigLogger(self.model, self.default_parameters, self.hyper_parameters, log_path)
+            config_logger = ConfigLogger(self.model, log_path)
             self.active_callbacks.append(config_logger)
 
         if ModelSaver in self.callback_classes:

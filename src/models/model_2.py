@@ -65,7 +65,7 @@ class Model2Builder(ModelBuilder):
 
 def train():
     settings = Settings()
-    default_parameters = settings.get_training_parameter_default()
+    default_parameters = settings.get_training_parameters()
 
     arg_parse = ArgumentParser()
     arg_parse.add_argument('--batch_size', type=int, default=default_parameters['batch_size'])
