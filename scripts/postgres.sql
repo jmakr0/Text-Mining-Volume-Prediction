@@ -57,6 +57,14 @@ create table guardianapierror
   reason     text
 );
 
+create view downloadview as
+  SELECT a.article_id,
+    a.article_url
+   FROM ((articles a
+     LEFT JOIN guardianapi g ON ((a.article_id = g.article_id)))
+     LEFT JOIN guardianapierror ge ON ((a.article_id = ge.article_id)))
+  WHERE ((g.article_id IS NULL) AND (ge.article_id IS NULL));
+
 CREATE MATERIALIZED VIEW articlecommentcountview AS
   SELECT
     g.article_id,
