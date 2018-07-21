@@ -24,13 +24,13 @@ The network also uses two dense layers (hence the name).
 #### Headline Convolution (`src.models.model_2.py`)
 
 This model uses the same embedding as the _Headline Dense_ model.
-The embeddings get transformed by an embedding layer with three different kernel sized and may-pooling is used afterwards.
+The embeddings get transformed by an embedding layer with three different kernel sizes and max-pooling is used afterwards.
 
 <img src="doc/model_2.png" width="1087px">
 
 #### Article LSTM (`src.models.model_4.py`)
 
-This model uses the first words of an article text, embdedds them like the _Headline Dense_ model and uses a LSTM-Layer to process the embedded words.
+This model uses the first words of an article text, embedds them like the _Headline Dense_ model, and uses a LSTM-Layer to process the embedded words.
 
 <img src="doc/model_4.png" width="267px">
 
@@ -42,7 +42,7 @@ This model uses the category of an article and two dense layers.
 
 #### Time (`src.models.model_7.py`)
 
-This model uses multiple time features extracted from the release time stemp of the article.
+This model uses multiple time features extracted from the release time stamp of the article.
 The time features are:
 
 * minute
@@ -58,7 +58,7 @@ The time features get embedded and processed through two dense layers.
 
 This model uses the logarithm from the headline and the article word count.
 The logarithm is used to create exponential sized bins for the articles.
-(The difference between 900 and 1000 words is not really important but the difference between 50 and 150 words might be more significant.)
+The difference between 900 and 1000 words is not important rather than the difference between 50 and 150 words.
 
 The logarithms get embedded and processed through two dense layers.
 
@@ -66,7 +66,9 @@ The logarithms get embedded and processed through two dense layers.
 
 #### Competitive Score (`src.models.model_9.py`)
 
-This model uses a self computed competitve score. The competitive score is calculated using the formula:
+This model uses a self computed competitve score.
+The competitive score is used to express the competition for every article.
+It is calculated using the formula:
 
 ![competitive score formula](doc/competitive_score.png)
 
@@ -78,7 +80,7 @@ with
 
 ### Combined Models
 
-Based on the performance and the correlation of the base models we combined certain models.
+Based on the performance and the correlation of the base models, we combined certain models.
 
 The correlations can be seen here:
 
