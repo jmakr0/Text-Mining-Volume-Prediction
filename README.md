@@ -28,19 +28,19 @@ The embeddings get transformed by an embedding layer with three different kernel
 
 <img src="doc/model_2.png" width="1087px">
 
-#### Article LSTM (`src.models.model_4.py`)
+#### Article LSTM (`src.models.model_3.py`)
 
 This model uses the first words of an article text, embedds them like the _Headline Dense_ model, and uses a LSTM-Layer to process the embedded words.
 
-<img src="doc/model_4.png" width="267px">
+<img src="doc/model_3.png" width="267px">
 
-#### Category (`src.models.model_6.py`)
+#### Category (`src.models.model_4.py`)
 
 This model uses the category of an article and two dense layers.
 
-<img src="doc/model_6.png" width="339px">
+<img src="doc/model_4.png" width="339px">
 
-#### Time (`src.models.model_7.py`)
+#### Time (`src.models.model_5.py`)
 
 This model uses multiple time features extracted from the release time stamp of the article.
 The time features are:
@@ -52,9 +52,9 @@ The time features are:
 
 The time features get embedded and processed through two dense layers.
 
-<img src="doc/model_7.png" width="1050px">
+<img src="doc/model_5.png" width="1050px">
 
-#### Headline, Article Length (`src.models.model_8.py`)
+#### Headline, Article Length (`src.models.model_6.py`)
 
 This model uses the logarithm from the headline and the article word count.
 The logarithm is used to create exponential sized bins for the articles.
@@ -62,9 +62,9 @@ The difference between 900 and 1000 words is not important rather than the diffe
 
 The logarithms get embedded and processed through two dense layers.
 
-<img src="doc/model_8.png" width="650px">
+<img src="doc/model_6.png" width="650px">
 
-#### Competitive Score (`src.models.model_9.py`)
+#### Competitive Score (`src.models.model_7.py`)
 
 This model uses a self computed competitve score.
 The competitive score is used to express the competition for every article.
@@ -76,7 +76,7 @@ with
 
 ![competitive score symbold](doc/competitive_score_symbols.png)
 
-<img src="doc/model_9.png" width="333px">
+<img src="doc/model_7.png" width="333px">
 
 ### Combined Models
 
@@ -86,9 +86,17 @@ The correlations can be seen here:
 
 <img src="doc/correlations.png" width="400px">
 
+#### `src.models.model_23.py`
+
+![](doc/model_23.png)
+
 #### `src.models.model_24.py`
 
 ![](doc/model_24.png)
+
+#### `src.models.model_25.py`
+
+![](doc/model_25.png)
 
 #### `src.models.model_26.py`
 
@@ -98,18 +106,10 @@ The correlations can be seen here:
 
 ![](doc/model_27.png)
 
-#### `src.models.model_28.py`
+#### `src.models.model_34.py`
 
-![](doc/model_28.png)
+<img src="doc/model_34.png" width="583px">
 
-#### `src.models.model_29.py`
+#### `src.models.model_234.py`
 
-![](doc/model_29.png)
-
-#### `src.models.model_46.py`
-
-<img src="doc/model_46.png" width="583px">
-
-#### `src.models.model_246.py`
-
-![](doc/model_246.png)
+![](doc/model_234.png)
