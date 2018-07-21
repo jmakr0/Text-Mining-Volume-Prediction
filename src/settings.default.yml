@@ -28,7 +28,7 @@ training_parameters:
     epochs: 50
     dictionary_size: 40000
     max_headline_length: 20
-    body_begin_length: 100
+    body_begin_length: 50
     max_article_length: 20000
     headline_doc2vec_dimensions: 50
     article_doc2vec_dimensions: 300
