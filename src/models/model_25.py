@@ -5,7 +5,6 @@ from keras.layers import Embedding, Dense, Conv1D, GlobalMaxPooling1D, \
     Concatenate, Reshape, BatchNormalization
 
 from src.encoder.glove import Glove
-from src.encoder.numeric_log import NumericLog
 from src.models.model_builder import ModelBuilder
 from src.models.preprocessor import Preprocessor
 from src.utils.calculate_class_weights import calculate_class_weights
@@ -18,7 +17,7 @@ from src.utils.logging.callbacks.model_saver import ModelSaver
 from src.utils.settings import Settings
 
 
-class Model28Builder(ModelBuilder):
+class Model25Builder(ModelBuilder):
     def __init__(self):
         super().__init__()
 
@@ -29,8 +28,10 @@ class Model28Builder(ModelBuilder):
         self.default_parameters['filter_count_3'] = 5
         self.default_parameters['filter_count_1'] = 5
 
-        self.default_parameters['headline_log_representation_embedding_dimensions'] = 5
-        self.default_parameters['article_log_representation_embedding_dimensions'] = 5
+        self.default_parameters['minute_embedding_dimensions'] = 2
+        self.default_parameters['hour_embedding_dimensions'] = 2
+        self.default_parameters['day_of_week_embedding_dimensions'] = 2
+        self.default_parameters['day_of_year_embedding_dimensions'] = 2
         self.default_parameters['fully_connected_dimensions'] = 128
         self.default_parameters['fully_connected_activation'] = 'tanh'
 
@@ -41,9 +42,6 @@ class Model28Builder(ModelBuilder):
         super().prepare_building()
 
         glove = self.inputs['glove']
-        headline_numeric_log = self.inputs['headline_numeric_log']
-        article_numeric_log = self.inputs['article_numeric_log']
-
         headline_input = Input(shape=(self.parameters['max_headline_length'],), name='headline_input')
         headline_embedding = Embedding(glove.embedding_vectors.shape[0],
                                        glove.embedding_vectors.shape[1],
@@ -56,23 +54,29 @@ class Model28Builder(ModelBuilder):
         convolution_1 = Conv1D(self.parameters['filter_count_1'], kernel_size=1)(headline_embedding)
         convolution_1_max = GlobalMaxPooling1D()(convolution_1)
 
-        headline_numeric_log_input = Input(shape=(1,), name='headline_log_representation_input')
-        headline_numeric_log_embedding = Embedding(headline_numeric_log.max_log_value() + 1,
-                                                   self.parameters['headline_log_representation_embedding_dimensions'])(
-            headline_numeric_log_input)
-        headline_numeric_log_reshape = Reshape((self.parameters['headline_log_representation_embedding_dimensions'],))(
-            headline_numeric_log_embedding)
+        minute_input = Input(shape=(1,), name='minute_input')
+        minute_embedding = Embedding(60, self.parameters['minute_embedding_dimensions'])(minute_input)
+        minute_reshape = Reshape((self.parameters['minute_embedding_dimensions'],))(minute_embedding)
 
-        article_numeric_log_input = Input(shape=(1,), name='article_numeric_log_input')
-        article_numeric_log_embedding = Embedding(article_numeric_log.max_log_value() + 1,
-                                                  self.parameters['article_log_representation_embedding_dimensions'])(
-            article_numeric_log_input)
-        article_numeric_log_reshape = Reshape((self.parameters['article_log_representation_embedding_dimensions'],))(
-            article_numeric_log_embedding)
+        hour_input = Input(shape=(1,), name='hour_input')
+        hour_embedding = Embedding(24, self.parameters['hour_embedding_dimensions'])(hour_input)
+        hour_reshape = Reshape((self.parameters['hour_embedding_dimensions'],))(hour_embedding)
 
-        log_concat = Concatenate()([headline_numeric_log_reshape, article_numeric_log_reshape])
+        day_of_week_input = Input(shape=(1,), name='day_of_week_input')
+        day_of_week_embedding = Embedding(7, self.parameters['day_of_week_embedding_dimensions'])(day_of_week_input)
+        day_of_week_reshape = Reshape((self.parameters['day_of_week_embedding_dimensions'],))(day_of_week_embedding)
+
+        day_of_year_input = Input(shape=(1,), name='day_of_year_input')
+        day_of_year_embedding = Embedding(366, self.parameters['day_of_year_embedding_dimensions'])(day_of_year_input)
+        day_of_year_reshape = Reshape((self.parameters['day_of_year_embedding_dimensions'],))(day_of_year_embedding)
+
+        time_concat = Concatenate()([hour_reshape,
+                                minute_reshape,
+                                day_of_week_reshape,
+                                day_of_year_reshape])
+
         fully_connected = Dense(self.parameters['fully_connected_dimensions'],
-                                activation=self.parameters['fully_connected_activation'])(log_concat)
+                                activation=self.parameters['fully_connected_activation'])(time_concat)
         batch_normalization = BatchNormalization()(fully_connected)
 
         concat = Concatenate()([convolution_5_max,
@@ -81,7 +85,7 @@ class Model28Builder(ModelBuilder):
                                 batch_normalization])
         main_output = Dense(1, activation='sigmoid', name='output')(concat)
 
-        model = Model(inputs=[headline_input, headline_numeric_log_input, article_numeric_log_input],
+        model = Model(inputs=[headline_input, minute_input, hour_input, day_of_week_input, day_of_year_input],
                       outputs=[main_output],
                       name=self.model_identifier)
 
@@ -93,7 +97,7 @@ class Model28Builder(ModelBuilder):
 
     @property
     def model_identifier(self):
-        return 'model_28'
+        return 'model_25'
 
 
 def train():
@@ -106,14 +110,15 @@ def train():
 
     arg_parse.add_argument('--dictionary_size', type=int, default=default_parameters['dictionary_size'])
     arg_parse.add_argument('--max_headline_length', type=int, default=default_parameters['max_headline_length'])
-    arg_parse.add_argument('--max_article_length', type=int, default=default_parameters['max_article_length'])
 
     arg_parse.add_argument('--filter_count_5', type=int)
     arg_parse.add_argument('--filter_count_3', type=int)
     arg_parse.add_argument('--filter_count_1', type=int)
 
-    arg_parse.add_argument('--headline_log_representation_embedding_dimensions', type=int)
-    arg_parse.add_argument('--article_log_representation_embedding_dimensions', type=int)
+    arg_parse.add_argument('--minute_embedding_dimensions', type=int)
+    arg_parse.add_argument('--hour_embedding_dimensions', type=int)
+    arg_parse.add_argument('--day_of_week_embedding_dimensions', type=int)
+    arg_parse.add_argument('--day_of_year_embedding_dimensions', type=int)
     arg_parse.add_argument('--fully_connected_dimensions', type=int)
     arg_parse.add_argument('--fully_connected_activation', type=str)
 
@@ -124,14 +129,9 @@ def train():
     glove = Glove(arguments.dictionary_size)
     glove.load_embedding()
 
-    headline_numeric_log = NumericLog(arguments.max_headline_length)
-    article_numeric_log = NumericLog(arguments.max_article_length)
-
-    model_builder = Model28Builder() \
+    model_builder = Model25Builder() \
         .set_input('glove', glove) \
-        .set_parameter('max_headline_length', arguments.max_headline_length) \
-        .set_input('headline_numeric_log', headline_numeric_log) \
-        .set_input('article_numeric_log', article_numeric_log)
+        .set_parameter('max_headline_length', arguments.max_headline_length)
 
     for key in model_builder.default_parameters.keys():
         if getattr(arguments, key):
@@ -142,18 +142,18 @@ def train():
     preprocessor = Preprocessor(model)
     preprocessor.set_encoder('glove', glove)
     preprocessor.set_parameter('max_headline_length', arguments.max_headline_length)
-    preprocessor.set_encoder('headline_numeric_log', headline_numeric_log)
-    preprocessor.set_encoder('article_numeric_log', article_numeric_log)
 
     preprocessor.load_data(['headline',
-                            'headline_log_representation',
-                            'article_log_representation',
+                            'minute',
+                            'hour',
+                            'day_of_week',
+                            'day_of_year',
                             'is_top_submission'])
 
     training_input = [preprocessor.training_data[key] for key in
-                      ['headline', 'headline_log_representation', 'article_log_representation']]
+                      ['headline', 'minute', 'hour', 'day_of_week', 'day_of_year']]
     validation_input = [preprocessor.validation_data[key] for key in
-                        ['headline', 'headline_log_representation', 'article_log_representation']]
+                        ['headline', 'minute', 'hour', 'day_of_week', 'day_of_year']]
     training_output = [preprocessor.training_data['is_top_submission']]
     validation_output = [preprocessor.validation_data['is_top_submission']]
 
