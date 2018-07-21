@@ -40,3 +40,7 @@ network_parameters:
   filter_count_1: 5
   lstm_units: 64
   category_embedding_dimensions: 5
+  minute_embedding_dimensions: 2
+  hour_embedding_dimensions: 2
+  day_of_week_embedding_dimensions: 2
+  day_of_year_embedding_dimensions: 2
