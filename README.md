@@ -9,6 +9,8 @@ We focused on articles of https://www.theguardian.com
 
 ## Models
 
+### Base Models
+
 The models are created using descendants from the generic class `src.models.model_builder.ModelBuilder`.
 We created the following base models:
 
@@ -73,3 +75,39 @@ with
 ![competitive score symbold](doc/competitive_score_symbols.png)
 
 <img src="doc/model_9.png" width="333px">
+
+### Combined Models
+
+Based on the performance and the correlation of the base models we combined certain models.
+
+The correlations can be seen here:
+
+<img src="doc/correlations.png" width="400px">
+
+#### `src.models.model_24.py`
+
+![](doc/model_24.png)
+
+#### `src.models.model_26.py`
+
+![](doc/model_26.png)
+
+#### `src.models.model_27.py`
+
+![](doc/model_27.png)
+
+#### `src.models.model_28.py`
+
+![](doc/model_28.png)
+
+#### `src.models.model_29.py`
+
+![](doc/model_29.png)
+
+#### `src.models.model_46.py`
+
+<img src="doc/model_46.png" width="583px">
+
+#### `src.models.model_246.py`
+
+![](doc/model_246.png)
