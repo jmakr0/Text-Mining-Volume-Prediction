@@ -38,3 +38,4 @@ network_parameters:
   filter_count_5: 5
   filter_count_3: 5
   filter_count_1: 5
+  lstm_units: 64
