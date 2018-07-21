@@ -24,14 +24,8 @@ class Model1Builder(ModelBuilder):
         self.required_inputs.append('glove')
         self.required_parameters.append('max_headline_length')
 
-        self.default_parameters['fully_connected_dimensions'] = settings.get_network_parameters('fully_connected_dimensions')
-        self.default_parameters['fully_connected_activation'] = settings.get_network_parameters('fully_connected_activation')
-
-        self.default_parameters['optimizer'] = settings.get_network_parameters('optimizer')
-        self.default_parameters['loss'] = settings.get_network_parameters('loss_function')
-
     def __call__(self):
-        super().prepare_building()
+        super().check_required()
 
         glove = self.inputs['glove']
         headline_input = Input(shape=(self.parameters['max_headline_length'],), name='headline_input')

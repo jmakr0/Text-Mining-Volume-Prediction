@@ -28,7 +28,7 @@ class Model4Builder(ModelBuilder):
         self.default_parameters['loss'] = settings.get_network_parameters('loss_function')
 
     def __call__(self):
-        super().prepare_building()
+        super().check_required()
 
         category_input = Input(shape=(1,), name='category_input')
         category_embedding = Embedding(81, self.parameters['category_embedding_dimensions'])(category_input)

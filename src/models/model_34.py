@@ -33,7 +33,7 @@ class Model34Builder(ModelBuilder):
         self.default_parameters['loss'] = 'binary_crossentropy'
 
     def __call__(self):
-        super().prepare_building()
+        super().check_required()
 
         glove = self.inputs['glove']
 

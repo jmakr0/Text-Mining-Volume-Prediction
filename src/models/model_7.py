@@ -27,7 +27,7 @@ class Model7Builder(ModelBuilder):
         self.default_parameters['loss'] = 'binary_crossentropy'
 
     def __call__(self):
-        super().prepare_building()
+        super().check_required()
 
         competitive_score_input = Input(shape=(1,), name='competitive_score_input')
         competitive_score_sigmoid = Dense(1, activation='sigmoid')(competitive_score_input)

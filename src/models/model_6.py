@@ -20,6 +20,7 @@ class Model6Builder(ModelBuilder):
     def __init__(self):
         super().__init__()
 
+
         self.required_inputs.append('headline_numeric_log')
         self.required_inputs.append('article_numeric_log')
 
@@ -32,7 +33,7 @@ class Model6Builder(ModelBuilder):
         self.default_parameters['loss'] = 'binary_crossentropy'
 
     def __call__(self):
-        super().prepare_building()
+        super().check_required()
 
         headline_numeric_log = self.inputs['headline_numeric_log']
         article_numeric_log = self.inputs['article_numeric_log']

@@ -36,7 +36,7 @@ class Model24Builder(ModelBuilder):
         self.default_parameters['loss'] = 'binary_crossentropy'
 
     def __call__(self):
-        super().prepare_building()
+        super().check_required()
 
         glove = self.inputs['glove']
         headline_input = Input(shape=(self.parameters['max_headline_length'],), name='headline_input')

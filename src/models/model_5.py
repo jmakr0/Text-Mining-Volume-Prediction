@@ -31,7 +31,7 @@ class Model5Builder(ModelBuilder):
         self.default_parameters['loss'] = settings.get_network_parameters('loss_function')
 
     def __call__(self):
-        super().prepare_building()
+        super().check_required()
 
         minute_input = Input(shape=(1,), name='minute_input')
         minute_embedding = Embedding(60, self.parameters['minute_embedding_dimensions'])(minute_input)

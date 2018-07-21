@@ -38,7 +38,7 @@ class Model26Builder(ModelBuilder):
         self.default_parameters['loss'] = 'binary_crossentropy'
 
     def __call__(self):
-        super().prepare_building()
+        super().check_required()
 
         glove = self.inputs['glove']
         headline_numeric_log = self.inputs['headline_numeric_log']
