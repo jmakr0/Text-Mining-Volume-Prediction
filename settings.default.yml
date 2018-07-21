@@ -32,7 +32,7 @@ training_parameters:
 
 network_parameters:
   optimizer: adam
-  loss_function: binary_crossentropy
+  loss: binary_crossentropy
   fully_connected_dimensions: 128
   fully_connected_activation: tanh
   filter_count_5: 5
@@ -44,3 +44,5 @@ network_parameters:
   hour_embedding_dimensions: 2
   day_of_week_embedding_dimensions: 2
   day_of_year_embedding_dimensions: 2
+  headline_log_representation_embedding_dimensions: 5
+  article_log_representation_embedding_dimensions: 5

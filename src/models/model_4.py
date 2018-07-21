@@ -16,17 +16,6 @@ from src.utils.settings import Settings
 
 
 class Model4Builder(ModelBuilder):
-    def __init__(self):
-        super().__init__()
-        settings = Settings()
-
-        self.default_parameters['category_embedding_dimensions'] = settings.get_network_parameters('category_embedding_dimensions')
-        self.default_parameters['fully_connected_dimensions'] = settings.get_network_parameters('fully_connected_dimensions')
-        self.default_parameters['fully_connected_activation'] = settings.get_network_parameters('fully_connected_activation')
-
-        self.default_parameters['optimizer'] = settings.get_network_parameters('optimizer')
-        self.default_parameters['loss'] = settings.get_network_parameters('loss_function')
-
     def __call__(self):
         super().check_required()
 

@@ -20,17 +20,9 @@ from src.utils.settings import Settings
 class Model2Builder(ModelBuilder):
     def __init__(self):
         super().__init__()
-        settings = Settings()
 
         self.required_inputs.append('glove')
         self.required_parameters.append('max_headline_length')
-
-        self.default_parameters['filter_count_5'] = settings.get_network_parameters('filter_count_5')
-        self.default_parameters['filter_count_3'] = settings.get_network_parameters('filter_count_3')
-        self.default_parameters['filter_count_1'] = settings.get_network_parameters('filter_count_1')
-
-        self.default_parameters['optimizer'] = settings.get_network_parameters('optimizer')
-        self.default_parameters['loss'] = settings.get_network_parameters('loss_function')
 
     def __call__(self):
         super().check_required()

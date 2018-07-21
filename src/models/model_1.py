@@ -19,7 +19,6 @@ from src.utils.settings import Settings
 class Model1Builder(ModelBuilder):
     def __init__(self):
         super().__init__()
-        settings = Settings()
 
         self.required_inputs.append('glove')
         self.required_parameters.append('max_headline_length')

@@ -19,15 +19,9 @@ from src.utils.settings import Settings
 class Model3Builder(ModelBuilder):
     def __init__(self):
         super().__init__()
-        settings = Settings()
 
         self.required_inputs.append('glove')
         self.required_parameters.append('body_begin_length')
-
-        self.default_parameters['lstm_units'] = settings.get_network_parameters('lstm_units')
-
-        self.default_parameters['optimizer'] = settings.get_network_parameters('optimizer')
-        self.default_parameters['loss'] = settings.get_network_parameters('loss_function')
 
     def __call__(self):
         super().check_required()
