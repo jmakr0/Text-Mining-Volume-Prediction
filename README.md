@@ -38,8 +38,9 @@ Please make a copy of the ``setttings.default.yml -> settings.yml`` and adjust i
 
 ### Execute code
 Before you start, make sure to install all requirements with ``pip3 install -r requirements.txt``.
-To run our models and further actions, please execute ``python3 run.py``. An overview of possible options will be given by
-using ``python3 run.py -h``
+To run our models and further actions, please execute ``python3 run.py``. 
+
+An overview of possible options will be given by using ``python3 run.py -h``
 
 ## Models
 
