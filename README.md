@@ -7,6 +7,33 @@ More details about the course can be found here: https://hpi.de/naumann/teaching
 Our goal was to build deep learning models for the prediction of the comment volume for newspaper articles.
 We focused on articles of https://www.theguardian.com
 
+## How to use the code
+
+During the project, we've worked in different environments on different machines. Therefore, we've used docker in our development process.
+
+### Docker
+To use our setup, please go into the `docker` directory and run `docker-compose up`.
+This machines do not contain any code from this repository but provide a convenient environment.
+
+We use ssh to access the machines. To use your own ssh-public-key, please provide your key in `docker/setup/ssh_keys.pub`. 
+Keys within this file will be installed within the container.
+
+#### Setup
+Our docker environment provides two machines (developer/production): each one has access to a different `postgres` database.
+Each database can be administrated individually. For us it was a good approach to have just a small amount of the production
+database for our developer environment. For more details, please [our docker-compose.yml](docker/docker-compose.yml).
+
+### Not using docker
+Feel free not using docker, you just need to supply a postgres database.
+
+### Database
+To setup the database, please execute our [schema file](scripts/postgres.sql) on your postgres instance. 
+Besides a couple of tables, ... views ...
+
+#### import data
+
+### execute code 
+
 ## Models
 
 ### Base Models
