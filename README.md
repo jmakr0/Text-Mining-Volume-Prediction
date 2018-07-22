@@ -33,7 +33,7 @@ To setup the database, please execute our [schema file](scripts/postgres.sql) on
 To import the data (authors, articles, and comments), you can use the ``run.py``, but we recommend to use a native 
 postgres import strategy to speed up the process.  
 
-#### Settings.yml
+### Settings.yml
 Please make a copy of the ``setttings.default.yml -> settings.yml`` and adjust it to your environment.
 
 ### Execute code
