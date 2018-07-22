@@ -7,6 +7,41 @@ More details about the course can be found here: https://hpi.de/naumann/teaching
 Our goal was to build deep learning models for the prediction of the comment volume for newspaper articles.
 We focused on articles of https://www.theguardian.com
 
+## How to use the code
+
+During the project, we've worked in different environments on different machines. Therefore, we've used docker in our development process.
+
+### Docker
+To use our setup, please go into the `docker` directory and run `docker-compose up`.
+This setup dose not contain any code from this repository but provides a convenient environment.
+
+We use ssh to access the VMs. To use your own ssh-public-key, please provide your key in `docker/setup/ssh_keys.pub`. 
+The keys within this file will be installed within the container.
+
+#### Setup
+Our docker environment provides two machines (developer/production): each one has access to a different `postgres` database.
+Each database can be administrated individually. For us it was a convenient approach to have a small amount of the production
+database for our developer environment. For more details, please check out our [docker-compose.yml](docker/docker-compose.yml).
+
+### Not using docker
+Feel free not using docker, you just need to supply a postgres database.
+
+### Database
+To setup the database, please execute our [schema file](scripts/postgres.sql) on your postgres instance.
+
+#### Import data
+To import the data (authors, articles, and comments), you can use the ``run.py``, but we recommend to use a native 
+postgres import strategy to speed up the process.  
+
+### Settings.yml
+Please make a copy of the ``setttings.default.yml -> settings.yml`` and adjust it to your environment.
+
+### Execute code
+Before you start, make sure to install all requirements with ``pip3 install -r requirements.txt``.
+To run our models and further actions, please execute ``python3 run.py``. 
+
+An overview of possible options will be given by using ``python3 run.py -h``
+
 ## Models
 
 ### Base Models

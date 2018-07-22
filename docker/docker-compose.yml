@@ -2,7 +2,7 @@ version: '3'
 
 services:
 
-  text-mining-friedrich:
+  text-mining-dev:
     build: .
     ports:
       - "2222:22"
@@ -11,25 +11,7 @@ services:
     volumes:
       - ./data/assets:/root/data
 
-  text-mining-nils:
-    build: .
-    ports:
-      - "3333:22"
-    links:
-      - db-testing:db-host
-    volumes:
-      - ./data/assets:/root/data
-
-  text-mining-max:
-    build: .
-    ports:
-      - "4444:22"
-    links:
-      - db-testing:db-host
-    volumes:
-      - ./data/assets:/root/data
-
-  text-mining-production:
+  text-mining-prod:
     build: .
     ports:
       - "55555:22"

@@ -1,3 +1,25 @@
+create table authors
+(
+  author_id      integer not null
+    constraint authors_pkey
+    primary key,
+  comment_author text
+);
+
+create unique index authors_c1_uindex
+  on authors (author_id);
+
+create table articles
+(
+  article_id  integer not null
+    constraint articles_pkey
+    primary key,
+  article_url text
+);
+
+create unique index articles_article_id_uindex
+  on articles (article_id);
+
 create table comments
 (
   article_id        integer   not null,
