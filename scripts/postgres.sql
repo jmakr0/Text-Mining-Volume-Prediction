@@ -20,8 +20,6 @@ create table articles
 create unique index articles_article_id_uindex
   on articles (article_id);
 
-
-
 create table comments
 (
   article_id        integer   not null,
