@@ -1,0 +1,48 @@
+database:
+  host: db-host
+  port: 5432
+  dbname: postgres
+  user: user
+  password: password
+
+guardian_csv:
+  articles: filepath
+  authors: filepath
+  comments: filepath
+
+embeddings:
+  glove: filepath
+
+models:
+  doc2vec_dir: filepath
+
+guardian_api:
+  keys: ['test']
+
+training_results:
+  root_dir: dirpath
+
+training_parameters:
+  batch_size: 64
+  epochs: 50
+  dictionary_size: 40000
+  max_headline_length: 20
+  body_begin_length: 50
+  max_article_length: 20000
+
+network_parameters:
+  optimizer: adam
+  loss: binary_crossentropy
+  fully_connected_dimensions: 128
+  fully_connected_activation: tanh
+  filter_count_5: 5
+  filter_count_3: 5
+  filter_count_1: 5
+  lstm_units: 64
+  category_embedding_dimensions: 5
+  minute_embedding_dimensions: 2
+  hour_embedding_dimensions: 2
+  day_of_week_embedding_dimensions: 2
+  day_of_year_embedding_dimensions: 2
+  headline_log_representation_embedding_dimensions: 5
+  article_log_representation_embedding_dimensions: 5

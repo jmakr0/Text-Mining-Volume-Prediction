@@ -1,37 +1,27 @@
+import json
 from threading import Semaphore, Thread
 
-<<<<<<< HEAD
+from src.data_handler.articles_db import ArticlesDb
+from src.data_handler.db_fields import GuardianApiError
 from src.data_handler.download_errors_db import DownloadErrorsDb
-from src.data_handler.guardian_article_downloads_db import GuardianArticleDownloadsDb
-from src.data_handler.guardian_csv import GuardianCsv
+from src.data_handler.guardian_api_db import GuardianApiDb
 from src.guardian.api import Api
-=======
-import pandas
-
-from src.utils.settings import Settings
-from src.guardian.api import Api
-from src.data_handler.download_errors_db import DownloadErrorsDb
-from src.data_handler.guardian_article_downloads_db import GuardianArticleDownloadsDb
->>>>>>> ed57db2... added everything including downloader
 
 sem = Semaphore()
 
 
 class Downloader:
-    def __init__(self, worker_count, urls):
+    def __init__(self, worker_count, articles):
         self.urls = []
-        if type(urls) is list:
-            for url in urls:
-                self.urls.append((url[0], url[1]))
-        elif type(urls) is dict:
-            for key, url in urls.items():
-                self.urls.append((key, url))
+        if type(articles) is list:
+            for article in articles:
+                self.urls.append((article[0], article[1]))
 
         self.workers = []
         for i in range(worker_count):
-            self.workers.append(DownloadWorker(self.get_url))
+            self.workers.append(DownloadWorker(self.get_article))
 
-    def get_url(self):
+    def get_article(self):
         sem.acquire()
         url = False
         if len(self.urls) > 0:
@@ -47,13 +37,13 @@ class Downloader:
 
 
 class DownloadWorker(Thread):
-    def __init__(self, get_url):
+    def __init__(self, get_article):
         super().__init__()
 
-        self.download_db = GuardianArticleDownloadsDb()
+        self.download_db = GuardianApiDb()
         self.error_db = DownloadErrorsDb()
 
-        self.get_url = get_url
+        self.get_article = get_article
         self.guardian_api = Api()
 
     def run(self):
@@ -61,38 +51,41 @@ class DownloadWorker(Thread):
         api_key = self.guardian_api.get_api_key()
 
         while run:
-            url_tuple = self.get_url()
+            article = self.get_article()
 
-            if url_tuple:
-                url_saved = self.download_db.get(url_tuple[0])
-                url_error = self.error_db.get(url_tuple[0])
+            if article:
+                id = article[0]
+                url = article[1]
                 try:
-                    if not url_saved and not url_error:
-                        response = self.guardian_api.request_article(url_tuple[1], api_key)
+                    response = self.guardian_api.request_article(url, api_key)
 
-                        has_error = self.guardian_api.has_error(response)
-                        has_rate_limit = self.guardian_api.rate_limit(response)
+                    has_error = self.guardian_api.has_error(response)
+                    has_rate_limit = self.guardian_api.rate_limit(response)
 
-                        if not has_error and not has_rate_limit:
-                            article = self.guardian_api.extract_fields(response)
-                            self.download_db.set(url_tuple[0], article)
-                        elif has_error and not has_rate_limit:
-                            self.error_db.set(url_tuple[0], url_tuple[1])
-                        elif has_rate_limit:
-                            api_key = self.guardian_api.get_api_key()
-                            run = not not api_key
+                    if not has_error and not has_rate_limit:
+                        article_dict = self.guardian_api.extract_fields(response)
+                        article_dict[GuardianApiError.ID.value] = id
+                        self.download_db.save_article(article_dict)
+                    elif has_error and not has_rate_limit:
+                        article_dict = {GuardianApiError.ID.value: id,
+                                        GuardianApiError.REASON.value: json.dumps(response)}
+                        self.error_db.save_article(article_dict)
+                    elif has_rate_limit:
+                        api_key = self.guardian_api.get_api_key()
+                        run = not not api_key
 
                 except Exception as e:
-                    print('Could not get: ' + url_tuple[1])
+                    print('Could not get: ' + url)
                     print(str(response))
             else:
                 run = False
 
 
 def download():
-    urls = GuardianCsv().get_url_tuples()
+    article_db = ArticlesDb()
+    articles = article_db.get_download_articles()
     # max 12 requests per second
-    worker_count = 1
+    worker_count = 8
 
-    scraper = Downloader(worker_count, urls)
+    scraper = Downloader(worker_count, articles)
     scraper.start()

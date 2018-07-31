@@ -1,7 +1,11 @@
-from src.data_handler.redis_db import RedisDb
+from src.data_handler.db_fields import GuardianApiError
+from src.data_handler.postgres_db import PostgresDb
 
 
-class DownloadErrorsDb(RedisDb):
-    def __init__(self):
-        database_name = 'download-errors'
-        super().__init__(database_name)
+class DownloadErrorsDb(PostgresDb):
+
+    def get_article(self, article_id):
+        return self.get_dict(GuardianApiError, article_id)
+
+    def save_article(self, article_dict):
+        self.insert_dict(GuardianApiError, article_dict)
